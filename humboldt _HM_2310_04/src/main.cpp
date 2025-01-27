@@ -175,6 +175,19 @@ void handleSerialCommands()
       Serial.print("Speed command sent to Slave: ");
       Serial.println(command);
     }
+    else if (command.startsWith("m1v"))
+    {
+      mySerial.println(command);
+      Serial.print("Speed command sent to Slave (Motor 1): ");
+      Serial.println(command);
+    }
+    else if (command.startsWith("m2v"))
+    {
+      mySerial.println(command);
+      Serial.print("Speed command sent to Slave (Motor 2): ");
+      Serial.println(command);
+    }
+
     else if (command == "STOP_ALL")
     {
       mySerial.println(command);
@@ -200,17 +213,17 @@ void handleSerialCommands()
 void printHelp()
 {
   Serial.println("Available commands:");
-  Serial.println("help       - Display this help message");
-  Serial.println("m1   - Start Motor 1 clockwise");
-  Serial.println("m1r - Start Motor 1 counterclockwise");
-  Serial.println("m1s    - Stop Motor 1");
-  Serial.println("m2   - Start Motor 2 clockwise");
-  Serial.println("m2r - Start Motor 2 counterclockwise");
-  Serial.println("m2s    - Stop Motor 2");
-  Serial.println("s1_<1-5> - Set speed for Motor 1 (1=slow, 5=fast)");
-  Serial.println("s2_<1-5> - Set speed for Motor 2 (1=slow, 5=fast)");
-  Serial.println("STOP_ALL   - Stop all motors");
-  Serial.println("STOP_READING - Stop distance measurement");
+  Serial.println("help          - Display this help message");
+  Serial.println("m1            - Start Motor 1 clockwise");
+  Serial.println("m1r           - Start Motor 1 counterclockwise");
+  Serial.println("m1s           - Stop Motor 1");
+  Serial.println("m2            - Start Motor 2 clockwise");
+  Serial.println("m2r           - Start Motor 2 counterclockwise");
+  Serial.println("m2s           - Stop Motor 2");
+  Serial.println("m1vX          - Set Motor 1 speed (X = 0-5)");
+  Serial.println("m2vX          - Set Motor 2 speed (X = 0-5)");
+  Serial.println("STOP_ALL      - Stop all motors");
+  Serial.println("STOP_READING  - Stop distance measurement");
   Serial.println("START_READING - Start distance measurement");
-  Serial.println("d1         - Send 'd1' to Slave and wait for response. Send 'idl' if response is received.");
+  Serial.println("d1            - Send 'd1' to Slave and wait for response. Send 'idl' if response is received.");
 }

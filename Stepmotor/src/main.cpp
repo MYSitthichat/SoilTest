@@ -22,14 +22,14 @@ SoftwareSerial mySerial(RX_PIN, TX_PIN); // RX, TX
 #define SWITCH_REVERSE_1 A3
 #define SWITCH_REVERSE_2 A1
 
-bool isRunning[2] = {false, false};       // สถานะมอเตอร์
-bool direction[2] = {true, true};         // ทิศทางมอเตอร์
-unsigned long speedDelay[2] = {100, 100}; // ความเร็วมอเตอร์
-unsigned long lastPulseTime[2] = {0, 0};  // เวลา Pulse ล่าสุด
-bool stepState[2] = {false, false};       // สถานะ STEP_PIN
-bool buttonPressed[2] = {false, false};   // สถานะปุ่มกด
-bool serialCommand[2] = {false, false};   // สถานะ Serial Command
-String lastCommand = "";                  // เก็บคำสั่งล่าสุด
+bool isRunning[2] = {false, false};      // สถานะมอเตอร์
+bool direction[2] = {true, true};        // ทิศทางมอเตอร์
+unsigned long speedDelay[2] = {53, 53};  // ความเร็วมอเตอร์
+unsigned long lastPulseTime[2] = {0, 0}; // เวลา Pulse ล่าสุด
+bool stepState[2] = {false, false};      // สถานะ STEP_PIN
+bool buttonPressed[2] = {false, false};  // สถานะปุ่มกด
+bool serialCommand[2] = {false, false};  // สถานะ Serial Command
+String lastCommand = "";                 // เก็บคำสั่งล่าสุด
 
 void handleButtonPress();
 void handleSerialCommand();
@@ -200,7 +200,6 @@ void handleSerialCommand()
     Serial.print("Received command: ");
     Serial.println(command);
 
-    // check if the command is for motor speed
     if (command.startsWith("m1v") || command.startsWith("m2v"))
     {
       char motor = command[1];
@@ -215,48 +214,47 @@ void handleSerialCommand()
         mySerial.println("Invalid motor selection");
         return;
       }
-
       // set motor speed
-      // ค่ายิ่งน้อย ความเร็วยิ่งสูง
+      // ค่าเร็วสุด 53 ค่าที่ช้าที่สุด 180 สำหรับ sw1 off sw2 off sw3 on sw4 off sw5 off sw6 on sw7 on sw8 off
       switch (speed)
       {
       case '0':
-        speedDelay[motorIndex] = 200;
+        speedDelay[motorIndex] = 180;
         Serial.print("Motor ");
         Serial.print(motor);
         Serial.println(" set to lowest speed");
         mySerial.println("Motor set to lowest speed");
         break;
       case '1':
-        speedDelay[motorIndex] = 150;
+        speedDelay[motorIndex] = 160;
         Serial.print("Motor ");
         Serial.print(motor);
         Serial.println(" set to speed level 1");
         mySerial.println("Motor set to speed level 1");
         break;
       case '2':
-        speedDelay[motorIndex] = 100;
+        speedDelay[motorIndex] = 120;
         Serial.print("Motor ");
         Serial.print(motor);
         Serial.println(" set to speed level 2");
         mySerial.println("Motor set to speed level 2");
         break;
       case '3':
-        speedDelay[motorIndex] = 70;
+        speedDelay[motorIndex] = 100;
         Serial.print("Motor ");
         Serial.print(motor);
         Serial.println(" set to speed level 3");
         mySerial.println("Motor set to speed level 3");
         break;
       case '4':
-        speedDelay[motorIndex] = 40;
+        speedDelay[motorIndex] = 80;
         Serial.print("Motor ");
         Serial.print(motor);
         Serial.println(" set to speed level 4");
         mySerial.println("Motor set to speed level 4");
         break;
       case '5':
-        speedDelay[motorIndex] = 13;
+        speedDelay[motorIndex] = 53;
         Serial.print("Motor ");
         Serial.print(motor);
         Serial.println(" set to maximum speed");
@@ -268,72 +266,70 @@ void handleSerialCommand()
         break;
       }
     }
-    else if (command == "m1")
+    else if (command.startsWith("m1") || command.startsWith("m2"))
     {
-      serialCommand[0] = true;
-      buttonPressed[0] = false;
-      isRunning[0] = true;
-      digitalWrite(ENABLE_PIN_1, LOW);
-      digitalWrite(DIR_PIN_1, HIGH);
-      Serial.println("Motor 1 started clockwise via Serial Command");
-      mySerial.println("Motor 1 started clockwise");
-    }
-    else if (command == "m1r")
-    {
-      serialCommand[0] = true;
-      buttonPressed[0] = false;
-      isRunning[0] = true;
-      digitalWrite(ENABLE_PIN_1, LOW);
-      digitalWrite(DIR_PIN_1, LOW);
-      Serial.println("Motor 1 started counterclockwise via Serial Command");
-      mySerial.println("Motor 1 started counterclockwise");
-    }
-    else if (command == "m1s")
-    {
-      serialCommand[0] = false;
-      isRunning[0] = false;
-      digitalWrite(ENABLE_PIN_1, HIGH);
-      Serial.println("Motor 1 stopped via Serial Command");
-      mySerial.println("Motor 1 stopped");
-    }
-    else if (command == "m2")
-    {
-      serialCommand[1] = true;
-      buttonPressed[1] = false;
-      isRunning[1] = true;
-      digitalWrite(ENABLE_PIN_2, LOW);
-      digitalWrite(DIR_PIN_2, HIGH);
-      Serial.println("Motor 2 started clockwise via Serial Command");
-      mySerial.println("Motor 2 started clockwise");
-    }
-    else if (command == "m2r")
-    {
-      serialCommand[1] = true;
-      buttonPressed[1] = false;
-      isRunning[1] = true;
-      digitalWrite(ENABLE_PIN_2, LOW);
-      digitalWrite(DIR_PIN_2, LOW);
-      Serial.println("Motor 2 started counterclockwise via Serial Command");
-      mySerial.println("Motor 2 started counterclockwise");
-    }
-    else if (command == "m2s")
-    {
-      serialCommand[1] = false;
-      isRunning[1] = false;
-      digitalWrite(ENABLE_PIN_2, HIGH);
-      Serial.println("Motor 2 stopped via Serial Command");
-      mySerial.println("Motor 2 stopped");
+      char motor = command[1];
+      int motorIndex = (motor == '1') ? 0 : (motor == '2') ? 1
+                                                           : -1;
+
+      if (motorIndex == -1)
+      {
+        Serial.println("Invalid motor selection");
+        mySerial.println("Invalid motor selection");
+        return;
+      }
+
+      if (command == "m1" || command == "m2")
+      {
+        serialCommand[motorIndex] = true;
+        buttonPressed[motorIndex] = false;
+        isRunning[motorIndex] = true;
+        speedDelay[motorIndex] = 180; // ใช้ความเร็วเริ่มต้น 0
+        digitalWrite(ENABLE_PIN_1 + (motorIndex * 3), LOW);
+        digitalWrite(DIR_PIN_1 + (motorIndex * 3), HIGH);
+        Serial.print("Motor ");
+        Serial.print(motor);
+        Serial.println(" started clockwise via Serial Command");
+        mySerial.print("Motor ");
+        mySerial.print(motor);
+        mySerial.println(" started clockwise");
+      }
+      else if (command == "m1r" || command == "m2r")
+      {
+        serialCommand[motorIndex] = true;
+        buttonPressed[motorIndex] = false;
+        isRunning[motorIndex] = true;
+        speedDelay[motorIndex] = 180; // ใช้ความเร็วเริ่มต้น 0
+        digitalWrite(ENABLE_PIN_1 + (motorIndex * 3), LOW);
+        digitalWrite(DIR_PIN_1 + (motorIndex * 3), LOW);
+        Serial.print("Motor ");
+        Serial.print(motor);
+        Serial.println(" started counterclockwise via Serial Command");
+        mySerial.print("Motor ");
+        mySerial.print(motor);
+        mySerial.println(" started counterclockwise");
+      }
+      else if (command == "m1s" || command == "m2s")
+      {
+        serialCommand[motorIndex] = false;
+        isRunning[motorIndex] = false;
+        digitalWrite(ENABLE_PIN_1 + (motorIndex * 3), HIGH);
+        Serial.print("Motor ");
+        Serial.print(motor);
+        Serial.println(" stopped via Serial Command");
+        mySerial.print("Motor ");
+        mySerial.print(motor);
+        mySerial.println(" stopped");
+      }
     }
     else if (command == "help")
     {
       Serial.println("Available commands:");
       Serial.println("  m1    : Start Motor 1 clockwise");
       Serial.println("  m1r   : Start Motor 1 counterclockwise");
-      Serial.println("  m1v   : Stop Motor 1");
       Serial.println("  m1vX  : Set Motor 1 speed (X = 0-5)");
       Serial.println("  m2    : Start Motor 2 clockwise");
       Serial.println("  m2r   : Start Motor 2 counterclockwise");
-      Serial.println("  m2s   : Stop Motor 2");
       Serial.println("  m2vX  : Set Motor 2 speed (X = 0-5)");
       Serial.println("  help  : Show this help message");
       mySerial.println("Help displayed");
