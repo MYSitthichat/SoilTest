@@ -30,7 +30,7 @@ class Readloadcell(QThread,QObject):
         
     
     def get_comport(self,LY_comport,LX_comport):
-        print(LY_comport,LX_comport)
+        # print(LY_comport,LX_comport)
         self.loadcell_Y_serial = ser.Serial(port=LY_comport,stopbits=1, bytesize=8, baudrate=9600, timeout=1)
         self.loadcell_X_serial = ser.Serial(port=LX_comport,stopbits=1, bytesize=8, baudrate=9600, timeout=1)
         if self.loadcell_Y_serial.is_open and self.loadcell_X_serial.is_open:
