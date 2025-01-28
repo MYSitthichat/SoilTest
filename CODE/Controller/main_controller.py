@@ -8,7 +8,6 @@ from Controller.read_loadcell import Readloadcell
 from Controller.controller_arduino import ControllerArduino
 
 class MainController(QObject):
-    
     def __init__(self):
         super(MainController, self).__init__()
         self.main_frame = MainFrame()
@@ -38,12 +37,12 @@ class MainController(QObject):
         self.main_frame.test_cyclic_radioButton.clicked.connect(self.cyclic_selected)
         self.databass_controller.create_databass()
         self.databass_controller.check_record_setting()
-        self.databass_controller.list_for_parameter.connect(self.show_parameter)
         self.loadcell_data.load_cell_data.connect(self.update_loadcell_data)
         self.CT_arduino.displace_xy_data.connect(self.update_displace_data)
         self.serial_consuc =False
         self.serial_ar_con = False
         self.start_program()
+        self.show_parameter()
         
     @Slot()
     @Slot(str)
@@ -83,10 +82,6 @@ class MainController(QObject):
         
     def save_button_pressed(self):
         print("Save Clicked")
-    
-    def show_parameter(self):
-        # self.databass_controller.set_parameter_to_setting()
-        print("Show Parameter")
 
     def con_port_pressed(self):
         self.loadcell_Y_comport = self.main_frame.LY_Port_comboBox.currentText()
@@ -121,7 +116,7 @@ class MainController(QObject):
             msg_box.setWindowTitle("COMPORT CON ERROR")
             msg_box.setText(f"Failed to connect to {e} \n please check the comport")
             msg_box.exec()
-            
+        
     def discon_port_pressed(self):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Information)
@@ -141,6 +136,10 @@ class MainController(QObject):
         self.main_frame.con_port_pushButton.setEnabled(True)
         self.main_frame.con_port_pushButton.setStyleSheet(u"background:rgb(170, 255, 0)")
         self.clear_loadcell_data()
+        self.clear_displace_data()
+        self.main_frame.dis_port_pushButton.setEnabled(False)
+        self.main_frame.dis_port_pushButton.setStyleSheet(u"background:gray")
+        self.disable_ui_parameter()
     
     def update_loadcell_data(self,load_cell_value):
         loadcell_Y = load_cell_value[0]
@@ -158,6 +157,8 @@ class MainController(QObject):
         self.main_frame.test_dis_x_lineEdit.setText(dis_x)
         self.main_frame.test_dis_y_lineEdit.setText(dis_y)
         
+        
+        
     def monotonic_selected(self):
         self.monotonic_UI()
         
@@ -172,12 +173,6 @@ class MainController(QObject):
     def connect_serial_arduino(self):
         self.serial_ar_con = True
         
-    def config_button_pressed(self):
-        print("Config Clicked")
-        
-    def save_button_pressed(self):
-        print("Save Clicked")
-    
     def set_zero_button_pressed(self):
         print("Set Zero Clicked")
         
@@ -227,7 +222,8 @@ class MainController(QObject):
         
         self.main_frame.st_cyclic_lineEdit.setPlaceholderText("")
         self.main_frame.st_weight_x_lineEdit.setPlaceholderText("")
-        
+    
+    # show page
     def show_setting(self):
         self.main_frame.show_setting_page()
         self.main_frame.show()  
@@ -243,17 +239,127 @@ class MainController(QObject):
     def Show_main(self):
         self.main_frame.show_home_page()
         self.main_frame.show()
-
+    # show page
+    
     def start_program(self):
         self.main_frame.test_weight_x_lineEdit.setEnabled(False)
         self.main_frame.test_weight_y_lineEdit.setEnabled(False)
         self.main_frame.r_weight_x_lineEdit.setEnabled(False)
         self.main_frame.r_weight_y_lineEdit.setEnabled(False)
-        self.main_frame.dis_port_pushButton.setEnabled(True)
+        self.main_frame.dis_port_pushButton.setEnabled(False)
+        self.main_frame.st_save_pushButton.setEnabled(False)
         self.main_frame.dis_port_pushButton.setStyleSheet(u"background:gray")
+        self.disable_ui_parameter()
         
     def clear_loadcell_data(self):
         self.main_frame.test_weight_x_lineEdit.clear()
         self.main_frame.test_weight_y_lineEdit.clear()
         self.main_frame.r_weight_x_lineEdit.clear()
         self.main_frame.r_weight_y_lineEdit.clear()
+        
+    def clear_displace_data(self):
+        self.main_frame.test_dis_x_lineEdit.clear()
+        self.main_frame.test_dis_y_lineEdit.clear()
+        
+    
+    # set parameter to ui frame
+    def config_button_pressed(self):
+        self.show_massege_box_info("CONFIG","You want to change the parameter ??")
+        self.enable_ui_parameter()
+
+        
+    def save_button_pressed(self):
+        read_pwmx = self.main_frame.st_pwm_x_lineEdit.text()
+        read_pwmy = self.main_frame.st_pwm_y_lineEdit.text()
+        read_limit_wx = self.main_frame.st_limit_weight_x_lineEdit.text()
+        read_limit_wy = self.main_frame.st_limit_weight_y_lineEdit.text()
+        read_limit_dx = self.main_frame.st_limit_distance_x_lineEdit.text()
+        read_limit_dy = self.main_frame.st_limit_distance_y_lineEdit.text()
+        self.databass_controller.set_parameter_to_setting(read_pwmx,read_pwmy,read_limit_wx,read_limit_wy,read_limit_dx,read_limit_dy)
+        
+        self.show_massege_box_info("SAVE","save parameter success")
+        self.disable_ui_parameter()
+    
+    def show_parameter(self):
+        self.data_st = str(self.databass_controller.read_parameter_to_setting()).strip("[]").strip("()").split(",")
+        self.ID_P = str(self.data_st[0])
+        self.p_pwmx = str(self.data_st[1])
+        self.p_pwmy = str(self.data_st[2])
+        self.limit_wx = str(self.data_st[3])
+        self.limit_wy = str(self.data_st[4])
+        self.limit_dx = str(self.data_st[5])
+        self.limit_dy = str(self.data_st[6])
+        self.set_parameter_to_ui(self.p_pwmx,self.p_pwmy,self.limit_wx,self.limit_wy,self.limit_dx,self.limit_dy)
+        
+    def set_parameter_to_ui(self,ppx,ppy,lwx,lwy,ldx,ldy):
+        self.main_frame.st_pwm_x_lineEdit.setText(ppx)
+        self.main_frame.st_pwm_y_lineEdit.setText(ppy)
+        self.main_frame.st_limit_weight_x_lineEdit.setText(lwx)
+        self.main_frame.st_limit_weight_y_lineEdit.setText(lwy)
+        self.main_frame.st_limit_distance_x_lineEdit.setText(ldx)
+        self.main_frame.st_limit_distance_y_lineEdit.setText(ldy)
+        self.main_frame.st_pwm_x_lineEdit.setEnabled(False)
+        self.main_frame.st_pwm_y_lineEdit.setEnabled(False)
+        self.main_frame.st_limit_weight_x_lineEdit.setEnabled(False)
+        self.main_frame.st_limit_weight_y_lineEdit.setEnabled(False)
+        self.main_frame.st_limit_distance_x_lineEdit.setEnabled(False)
+        self.main_frame.st_limit_distance_y_lineEdit.setEnabled(False)
+        
+    def enable_ui_parameter(self):
+        self.main_frame.st_config_pushButton.setEnabled(False)
+        self.main_frame.st_save_pushButton.setEnabled(True)
+        self.main_frame.st_pwm_x_lineEdit.setEnabled(True)
+        self.main_frame.st_pwm_y_lineEdit.setEnabled(True)
+        self.main_frame.st_limit_weight_x_lineEdit.setEnabled(True)
+        self.main_frame.st_limit_weight_y_lineEdit.setEnabled(True)
+        self.main_frame.st_limit_distance_x_lineEdit.setEnabled(True)
+        self.main_frame.st_limit_distance_y_lineEdit.setEnabled(True)
+        self.main_frame.st_config_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.st_save_pushButton.setStyleSheet(u"background:rgb(170, 255, 0)")
+        self.main_frame.st_pwm_x_lineEdit.setStyleSheet(u"background:white")
+        self.main_frame.st_pwm_y_lineEdit.setStyleSheet(u"background:white")
+        self.main_frame.st_limit_weight_x_lineEdit.setStyleSheet(u"background:white")
+        self.main_frame.st_limit_weight_y_lineEdit.setStyleSheet(u"background:white")
+        self.main_frame.st_limit_distance_x_lineEdit.setStyleSheet(u"background:white")
+        self.main_frame.st_limit_distance_y_lineEdit.setStyleSheet(u"background:white")
+        
+    def disable_ui_parameter(self):
+        self.main_frame.st_config_pushButton.setEnabled(True)
+        self.main_frame.st_save_pushButton.setEnabled(False)
+        self.main_frame.st_pwm_x_lineEdit.setEnabled(False)
+        self.main_frame.st_pwm_y_lineEdit.setEnabled(False)
+        self.main_frame.st_limit_weight_x_lineEdit.setEnabled(False)
+        self.main_frame.st_limit_weight_y_lineEdit.setEnabled(False)
+        self.main_frame.st_limit_distance_x_lineEdit.setEnabled(False)
+        self.main_frame.st_limit_distance_y_lineEdit.setEnabled(False)
+        self.main_frame.st_config_pushButton.setStyleSheet(u"background:rgb(115, 174, 253)")
+        self.main_frame.st_save_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.st_pwm_x_lineEdit.setStyleSheet(u"background:gray")
+        self.main_frame.st_pwm_y_lineEdit.setStyleSheet(u"background:gray")
+        self.main_frame.st_limit_weight_x_lineEdit.setStyleSheet(u"background:gray")
+        self.main_frame.st_limit_weight_y_lineEdit.setStyleSheet(u"background:gray")
+        self.main_frame.st_limit_distance_x_lineEdit.setStyleSheet(u"background:gray")
+        self.main_frame.st_limit_distance_y_lineEdit.setStyleSheet(u"background:gray")
+    
+    def show_massege_box_info(self,title,text):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        msg_box.exec()
+        
+    def show_massege_box_error(self,title,text):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        msg_box.exec()
+        
+    def show_massege_box_warning(self,title,text):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        msg_box.exec()
+    
+    # set parameter to ui frame

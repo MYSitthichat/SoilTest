@@ -38,7 +38,6 @@ class ControllerArduino(QThread,QObject):
         
     
     def get_comport(self,Arduino_comport):
-        print(Arduino_comport)
         self.arduino_serial = ser.Serial(port=Arduino_comport, baudrate=9600, timeout=1)
         if self.arduino_serial.is_open:
             self.connect_serial_arduino_signal.emit()
