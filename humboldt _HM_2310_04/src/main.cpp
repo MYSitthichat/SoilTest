@@ -27,8 +27,8 @@ void printHelp();
 
 void setup()
 {
-  Serial.begin(9600);   // ใช้สำหรับ Debug
-  mySerial.begin(9600); // ใช้สำหรับสื่อสารกับ Slave
+  Serial.begin(115200);   // ใช้สำหรับ Debug
+  mySerial.begin(115200); // ใช้สำหรับสื่อสารกับ Slave
 
   Serial.println("System Initialized");
   Wire.begin();

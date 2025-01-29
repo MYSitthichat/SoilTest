@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject , Signal , Slot
+from PySide6.QtCore import QObject , Slot
 from view.view_main_frame import MainFrame
 from Controller.databass_controller import DatabassController
 from Controller.check_comport_controller import SerialPortChecker
@@ -6,6 +6,7 @@ import serial as ser
 from PySide6.QtWidgets import QMessageBox
 from Controller.read_loadcell import Readloadcell
 from Controller.controller_arduino import ControllerArduino
+import  time
 
 class MainController(QObject):
     def __init__(self):
@@ -45,17 +46,22 @@ class MainController(QObject):
         self.serial_ar_con = False
         self.start_program()
         self.show_parameter()
+        self.arduino_serial = ser.Serial(port="COM10", baudrate=115200, timeout=1)
         
     @Slot()
     @Slot(str)
     
     def test_m1(self):
-        self.CT_arduino.start_motors_y()
-        
+        # self.CT_arduino.start_motors_y()
+        print(self.arduino_serial.is_open)
+        self.arduino_serial.write(b'm1')
+        # time.sleep(1)
         
     def stop_m1(self):
-        self.CT_arduino.stop_motors_y()
-        
+        # self.CT_arduino.stop_motors_y()
+        print(self.arduino_serial.is_open)
+        self.arduino_serial.write(b'm1s')
+        # time.sleep(1)
     
     def port_updated(self, ports):
         if len(ports) == 0:

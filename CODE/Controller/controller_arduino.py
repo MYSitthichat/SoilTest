@@ -1,6 +1,5 @@
 from PySide6.QtCore import QThread, Signal,QObject
 import serial as ser
-import time
 
 class ControllerArduino(QThread,QObject):
     displace_xy_data = Signal(list)

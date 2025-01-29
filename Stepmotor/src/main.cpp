@@ -63,8 +63,8 @@ void setup()
     digitalWrite(ENABLE_PIN_1 + (i * 3), HIGH);
   }
 
-  Serial.begin(9600);   // สำหรับ Debug
-  mySerial.begin(9600); // SoftwareSerial สำหรับสื่อสารกับ Master
+  Serial.begin(115200);   // สำหรับ Debug
+  mySerial.begin(115200); // SoftwareSerial สำหรับสื่อสารกับ Master
   Serial.println("Setup complete");
 }
 
