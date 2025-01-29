@@ -33,6 +33,22 @@ String lastCommand = "";                 // เก็บคำสั่งล่
 
 void handleButtonPress();
 void handleSerialCommand();
+void controlMotors(int motor1State, int motor2State, bool motor1Dir, bool motor2Dir);
+void controlMotorsSequential(int motor1State, int motor2State, bool motor1Dir, bool motor2Dir)
+{
+  // เริ่มมอเตอร์ 1 ก่อน
+  isRunning[0] = motor1State;
+  digitalWrite(ENABLE_PIN_1, !motor1State);
+  digitalWrite(DIR_PIN_1, motor1Dir ? HIGH : LOW);
+  Serial.println("Motor 1 started");
+  delay(1000); // หน่วงเวลา 1 วินาที เพื่อให้มอเตอร์ 1 เริ่มก่อน
+
+  // จากนั้นเริ่มมอเตอร์ 2
+  isRunning[1] = motor2State;
+  digitalWrite(ENABLE_PIN_2, !motor2State);
+  digitalWrite(DIR_PIN_2, motor2Dir ? HIGH : LOW);
+  Serial.println("Motor 2 started");
+}
 
 void setup()
 {
@@ -214,58 +230,75 @@ void handleSerialCommand()
         mySerial.println("Invalid motor selection");
         return;
       }
-      // set motor speed
-      // ค่าเร็วสุด 53 ค่าที่ช้าที่สุด 180 สำหรับ sw1 off sw2 off sw3 on sw4 off sw5 off sw6 on sw7 on sw8 off
+
       switch (speed)
       {
       case '0':
         speedDelay[motorIndex] = 180;
-        Serial.print("Motor ");
-        Serial.print(motor);
-        Serial.println(" set to lowest speed");
-        mySerial.println("Motor set to lowest speed");
+        // Serial.print("Motor ");
+        // Serial.print(motor);
+        // Serial.println(" set to lowest speed");
+        // mySerial.println("Motor set to lowest speed");
         break;
       case '1':
         speedDelay[motorIndex] = 160;
-        Serial.print("Motor ");
-        Serial.print(motor);
-        Serial.println(" set to speed level 1");
-        mySerial.println("Motor set to speed level 1");
+        // Serial.print("Motor ");
+        // Serial.print(motor);
+        // Serial.println(" set to speed level 1");
+        // mySerial.println("Motor set to speed level 1");
         break;
       case '2':
-        speedDelay[motorIndex] = 120;
-        Serial.print("Motor ");
-        Serial.print(motor);
-        Serial.println(" set to speed level 2");
-        mySerial.println("Motor set to speed level 2");
+        // speedDelay[motorIndex] = 120;
+        // Serial.print("Motor ");
+        // Serial.print(motor);
+        // Serial.println(" set to speed level 2");
+        // mySerial.println("Motor set to speed level 2");
         break;
       case '3':
         speedDelay[motorIndex] = 100;
-        Serial.print("Motor ");
-        Serial.print(motor);
-        Serial.println(" set to speed level 3");
-        mySerial.println("Motor set to speed level 3");
+        // Serial.print("Motor ");
+        // Serial.print(motor);
+        // Serial.println(" set to speed level 3");
+        // mySerial.println("Motor set to speed level 3");
         break;
       case '4':
         speedDelay[motorIndex] = 80;
-        Serial.print("Motor ");
-        Serial.print(motor);
-        Serial.println(" set to speed level 4");
-        mySerial.println("Motor set to speed level 4");
+        // Serial.print("Motor ");
+        // Serial.print(motor);
+        // Serial.println(" set to speed level 4");
+        // mySerial.println("Motor set to speed level 4");
         break;
       case '5':
         speedDelay[motorIndex] = 53;
-        Serial.print("Motor ");
-        Serial.print(motor);
-        Serial.println(" set to maximum speed");
-        mySerial.println("Motor set to maximum speed");
+        // Serial.print("Motor ");
+        // Serial.print(motor);
+        // Serial.println(" set to maximum speed");
+        // mySerial.println("Motor set to maximum speed");
         break;
       default:
-        Serial.println("Invalid speed level");
-        mySerial.println("Invalid speed level");
-        break;
+        // Serial.println("Invalid speed level");
+        // mySerial.println("Invalid speed level");
+        return;
       }
+
+      Serial.print("Motor ");
+      Serial.print(motor);
+      Serial.print(" set to speed level ");
+      Serial.println(speed);
     }
+    if (command == "m1m2")
+    {
+      controlMotorsSequential(1, 1, true, true); // เริ่มมอเตอร์ 1 และ 2 ทีละตัว ตามเข็ม
+    }
+    else if (command == "m1m2r")
+    {
+      controlMotorsSequential(1, 1, false, false); // เริ่มมอเตอร์ 1 และ 2 ทีละตัว ทวนเข็ม
+    }
+    else if (command == "m1m2s")
+    {
+      controlMotorsSequential(0, 0, true, true); // หยุดมอเตอร์ 1 และ 2
+    }
+
     else if (command.startsWith("m1") || command.startsWith("m2"))
     {
       char motor = command[1];
@@ -299,7 +332,7 @@ void handleSerialCommand()
         serialCommand[motorIndex] = true;
         buttonPressed[motorIndex] = false;
         isRunning[motorIndex] = true;
-        speedDelay[motorIndex] = 180; // ใช้ความเร็วเริ่มต้น 0
+        speedDelay[motorIndex] = 180;
         digitalWrite(ENABLE_PIN_1 + (motorIndex * 3), LOW);
         digitalWrite(DIR_PIN_1 + (motorIndex * 3), LOW);
         Serial.print("Motor ");
@@ -331,6 +364,9 @@ void handleSerialCommand()
       Serial.println("  m2    : Start Motor 2 clockwise");
       Serial.println("  m2r   : Start Motor 2 counterclockwise");
       Serial.println("  m2vX  : Set Motor 2 speed (X = 0-5)");
+      Serial.println("  m1m2  : Start Motor 1 and Motor 2 clockwise");
+      Serial.println("  m1m2r : Start Motor 1 and Motor 2 counterclockwise");
+      Serial.println("  m1m2s : Stop Motor 1 and Motor 2");
       Serial.println("  help  : Show this help message");
       mySerial.println("Help displayed");
     }

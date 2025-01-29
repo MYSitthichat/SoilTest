@@ -51,7 +51,7 @@ void loop()
   if (mySerial.available())
   {
     String response = mySerial.readStringUntil('\n');
-    Serial.print("Slave Response: ");
+    // Serial.print("Slave Response: ");
     Serial.println(response);
   }
 }
@@ -59,29 +59,28 @@ void loop()
 void readAndDisplaySensors()
 {
   static unsigned long lastSensorReadTime = 0;
-  const unsigned long sensorReadInterval = 1000; // 500 ms
+  const unsigned long sensorReadInterval = 1; // 500 ms
 
   if (millis() - lastSensorReadTime >= sensorReadInterval)
   {
     lastSensorReadTime = millis();
 
-    float voltage1 = readAverageVoltage(ads1, 20);
-    float voltage2 = readAverageVoltage(ads2, 20);
-
+    float voltage1 = readAverageVoltage(ads1, 10);
+    float voltage2 = readAverageVoltage(ads2, 10);
     float distance1 = max(0.0, SCALE_FACTOR1 * (voltage1 - baseVoltage1));
     float distance2 = max(0.0, SCALE_FACTOR2 * (voltage2 - baseVoltage2));
 
-    Serial.print("Sensor 1 -> Voltage: ");
-    Serial.print(voltage1, 3);
-    Serial.print(" V | Distance: ");
+    // Serial.print("Sensor 1 -> Voltage: ");
+    // Serial.print(voltage1, 3);
+    // Serial.print(" V | Distance: ");
     Serial.print(distance1, 3);
-    Serial.println(" mm");
+    Serial.print(",");
 
-    Serial.print("Sensor 2 -> Voltage: ");
-    Serial.print(voltage2, 3);
-    Serial.print(" V | Distance: ");
-    Serial.print(distance2, 3);
-    Serial.println(" mm");
+    // Serial.print("Sensor 2 -> Voltage: ");
+    // Serial.print(voltage2, 3);
+    // Serial.print(" V | Distance: ");
+    Serial.println(distance2, 3);
+    // Serial.println(" mm");
   }
 }
 
@@ -93,7 +92,7 @@ float readAverageVoltage(Adafruit_ADS1115 &ads, int samples)
   {
     int16_t adcValue = ads.readADC_SingleEnded(0);
     totalVoltage += adcValue * 0.1875 / 1000; // แปลง ADC เป็นแรงดันไฟฟ้า
-    delay(10);
+    delay(0.2);
   }
   return totalVoltage / samples;
 }
@@ -131,7 +130,7 @@ void handleSerialCommands()
         if (mySerial.available())
         {
           String response = mySerial.readStringUntil('\n');
-          Serial.print("Slave Response: ");
+          Serial.print(" ");
           Serial.println(response);
 
           if (response.length() > 0)
@@ -222,6 +221,9 @@ void printHelp()
   Serial.println("m2s           - Stop Motor 2");
   Serial.println("m1vX          - Set Motor 1 speed (X = 0-5)");
   Serial.println("m2vX          - Set Motor 2 speed (X = 0-5)");
+  Serial.println("m1m2          - Start Motor 1 and Motor 2 clockwise");
+  Serial.println("m1m2r         - Start Motor 1 and Motor 2 counterclockwise");
+  Serial.println("m1m2s         - Stop Motor 1 and Motor 2");
   Serial.println("STOP_ALL      - Stop all motors");
   Serial.println("STOP_READING  - Stop distance measurement");
   Serial.println("START_READING - Start distance measurement");
