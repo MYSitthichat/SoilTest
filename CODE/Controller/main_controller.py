@@ -39,6 +39,8 @@ class MainController(QObject):
         self.databass_controller.check_record_setting()
         self.loadcell_data.load_cell_data.connect(self.update_loadcell_data)
         self.CT_arduino.displace_xy_data.connect(self.update_displace_data)
+        self.main_frame.cl_calibrate_pushButton.clicked.connect(self.test_m1)
+        self.main_frame.cl_set_zero_pushButton.clicked.connect(self.stop_m1)
         self.serial_consuc =False
         self.serial_ar_con = False
         self.start_program()
@@ -46,6 +48,14 @@ class MainController(QObject):
         
     @Slot()
     @Slot(str)
+    
+    def test_m1(self):
+        self.CT_arduino.start_motors_y()
+        
+        
+    def stop_m1(self):
+        self.CT_arduino.stop_motors_y()
+        
     
     def port_updated(self, ports):
         if len(ports) == 0:
