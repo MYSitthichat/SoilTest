@@ -25,7 +25,7 @@ class DatabassController(QObject):
     
     def check_all_table(self):
         self.check_table_setting()
-        print("create table setting")
+        # print("create table setting")
         
     def check_table_setting(self):
         conn = sqlite3.connect(r'DATABASS/CT.db')
@@ -42,15 +42,10 @@ class DatabassController(QObject):
         conn = sqlite3.connect(r'DATABASS/CT.db')
         conn.execute('''CREATE TABLE SETTING
             (ID INT PRIMARY KEY     NOT NULL,
-            CYCLIC               INT    NOT NULL,
             PWM_X                INT    NOT NULL,
             PWM_Y                INT    NOT NULL,
-            WEIGHT_X             INT    NOT NULL,
-            WEIGHT_Y             INT    NOT NULL,
             LIMIT_WEIGHT_X       INT    NOT NULL,
             LIMIT_WEIGHT_Y       INT    NOT NULL,
-            DISTANCE_X           INT    NOT NULL,
-            DISTANCE_Y           INT    NOT NULL,
             LIMIT_DISTANCE_X     INT    NOT NULL,
             LIMIT_DISTANCE_Y     INT    NOT NULL);''')
         conn.close() 
@@ -61,7 +56,7 @@ class DatabassController(QObject):
         cursor.execute("SELECT * FROM SETTING")
         record_exists = cursor.fetchone()
         if record_exists:
-            self.set_parameter_to_setting()
+            self.read_parameter_to_setting()
         else:
             self.insert_defualt_record_setting()
             print("insert record setting to default")
@@ -69,26 +64,40 @@ class DatabassController(QObject):
     
     def insert_defualt_record_setting(self):
         conn = sqlite3.connect(r'DATABASS/CT.db')
-        conn.execute("INSERT INTO SETTING (ID,CYCLIC,PWM_X,PWM_Y,WEIGHT_X,WEIGHT_Y,LIMIT_WEIGHT_X,LIMIT_WEIGHT_Y,DISTANCE_X,DISTANCE_Y,LIMIT_DISTANCE_X,LIMIT_DISTANCE_Y) VALUES (1,0,0,0,0,0,0,0,0,0,0,0);")
+        conn.execute("INSERT INTO SETTING (ID,PWM_X,PWM_Y,LIMIT_WEIGHT_X,LIMIT_WEIGHT_Y,LIMIT_DISTANCE_X,LIMIT_DISTANCE_Y) VALUES (1,0,0,0,0,0,0);")
         conn.commit()
         conn.close()
     
-    def set_parameter_to_setting(self):
+    def set_parameter_to_setting(self,pwmx,pwmy,limit_weight_x,limit_weight_y,limit_distance_x,limit_distance_y):
+        conn = sqlite3.connect(r'DATABASS/CT.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT MAX(ID) FROM SETTING;")
+        highest_id = cursor.fetchone()[0]
+        if highest_id:
+            ids = str(highest_id+1)
+            cursor.execute("INSERT INTO SETTING (ID,PWM_X,PWM_Y,LIMIT_WEIGHT_X,LIMIT_WEIGHT_Y,LIMIT_DISTANCE_X,LIMIT_DISTANCE_Y) VALUES (?,?,?,?,?,?,?);",(ids,pwmx,pwmy,limit_weight_x,limit_weight_y,limit_distance_x,limit_distance_y))
+            conn.commit()
+            conn.close()
+        else:
+            print("No New setting")
+            conn.close()
+    
+    def read_parameter_to_setting(self):
         conn = sqlite3.connect(r'DATABASS/CT.db')
         cursor = conn.cursor()
         cursor.execute("SELECT ID FROM SETTING WHERE ID > 1;")
         ids = cursor.fetchall()
         if ids:
-            cursor.execute("SELECT * FROM SETTING WHERE ID > 1;")
-            setting_record = cursor.fetchall()
+            cursor.execute("SELECT * FROM SETTING WHERE ID = (SELECT MAX(ID) FROM SETTING);")
+            self.setting_record = cursor.fetchall()
             # print(f"Record:{setting_record}")
-            self.list_for_parameter.emit(setting_record)
-
+            # self.list_for_parameter.emit(setting_record)
         else:
             cursor.execute("SELECT * FROM SETTING WHERE ID = 1;")
-            setting_record = cursor.fetchone()
+            self.setting_record = cursor.fetchone()
             # print(f"Default record:{setting_record}")
-            self.list_for_parameter.emit(setting_record)
+            # self.list_for_parameter.emit(setting_record)
+        return self.setting_record
             
 
     
