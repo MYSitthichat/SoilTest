@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject , Signal , Slot
+from PySide6.QtCore import QObject , Slot
 from view.view_main_frame import MainFrame
 from Controller.databass_controller import DatabassController
 from Controller.check_comport_controller import SerialPortChecker
@@ -6,6 +6,7 @@ import serial as ser
 from PySide6.QtWidgets import QMessageBox
 from Controller.read_loadcell import Readloadcell
 from Controller.controller_arduino import ControllerArduino
+import  time
 
 class MainController(QObject):
     def __init__(self):
@@ -39,8 +40,11 @@ class MainController(QObject):
         self.databass_controller.check_record_setting()
         self.loadcell_data.load_cell_data.connect(self.update_loadcell_data)
         self.CT_arduino.displace_xy_data.connect(self.update_displace_data)
-        self.main_frame.cl_calibrate_pushButton.clicked.connect(self.test_m1)
-        self.main_frame.cl_set_zero_pushButton.clicked.connect(self.stop_m1)
+        self.main_frame.m_up_pushButton.clicked.connect(self.m_up_pressed)
+        self.main_frame.m_down_pushButton.clicked.connect(self.m_down_pressed)
+        self.main_frame.m_in_pushButton.clicked.connect(self.m_in_pressed)
+        self.main_frame.m_out_pushButton.clicked.connect(self.m_out_pressed)
+        self.main_frame.m_stop_all_pushButton.clicked.connect(self.steop_all_motors)
         self.serial_consuc =False
         self.serial_ar_con = False
         self.start_program()
@@ -49,13 +53,6 @@ class MainController(QObject):
     @Slot()
     @Slot(str)
     
-    def test_m1(self):
-        self.CT_arduino.start_motors_y()
-        
-        
-    def stop_m1(self):
-        self.CT_arduino.stop_motors_y()
-        
     
     def port_updated(self, ports):
         if len(ports) == 0:
@@ -110,6 +107,7 @@ class MainController(QObject):
                 msg_box.setWindowTitle("COMPORT CON")
                 msg_box.setText(f"CONNECTED \n L1 to{self.loadcell_Y_comport} \n L2 to{self.loadcell_X_comport} \nArduino to{self.arduino_comport}")
                 msg_box.exec()
+                self.enable_m_controll()
                 self.main_frame.LY_Port_comboBox.setEnabled(False)
                 self.main_frame.LY_Port_comboBox.setStyleSheet(u"background:gray")
                 self.main_frame.LX_Port_comboBox.setEnabled(False)
@@ -175,8 +173,26 @@ class MainController(QObject):
     def cyclic_selected(self):
         self.cyclic_UI()
     
+    def m_up_pressed(self):
+        print("M UP")
+        self.CT_arduino.up_motors_y()
+        
+    def m_down_pressed(self):
+        print("M DOWN")
+        self.CT_arduino.down_motors_y()
     
-    
+    def m_in_pressed(self):
+        print("M IN")
+        self.CT_arduino.in_motors_x()
+        
+    def m_out_pressed(self):
+        print("M OUT")
+        self.CT_arduino.out_motors_x()
+        
+    def steop_all_motors(self):
+        print("STOP ALL")
+        self.CT_arduino.stop_all_motors()
+        
     def connect_serial_XY(self):
         self.serial_consuc = True
     
@@ -342,6 +358,11 @@ class MainController(QObject):
         self.main_frame.st_limit_weight_y_lineEdit.setEnabled(False)
         self.main_frame.st_limit_distance_x_lineEdit.setEnabled(False)
         self.main_frame.st_limit_distance_y_lineEdit.setEnabled(False)
+        self.main_frame.m_up_pushButton.setEnabled(False)
+        self.main_frame.m_down_pushButton.setEnabled(False)
+        self.main_frame.m_in_pushButton.setEnabled(False)
+        self.main_frame.m_out_pushButton.setEnabled(False)
+        self.main_frame.m_stop_all_pushButton.setEnabled(False)
         self.main_frame.st_config_pushButton.setStyleSheet(u"background:rgb(115, 174, 253)")
         self.main_frame.st_save_pushButton.setStyleSheet(u"background:gray")
         self.main_frame.st_pwm_x_lineEdit.setStyleSheet(u"background:gray")
@@ -350,7 +371,25 @@ class MainController(QObject):
         self.main_frame.st_limit_weight_y_lineEdit.setStyleSheet(u"background:gray")
         self.main_frame.st_limit_distance_x_lineEdit.setStyleSheet(u"background:gray")
         self.main_frame.st_limit_distance_y_lineEdit.setStyleSheet(u"background:gray")
-    
+        self.main_frame.m_up_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.m_down_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.m_in_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.m_out_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.m_stop_all_pushButton.setStyleSheet(u"background:gray")
+        
+    def enable_m_controll(self):
+        self.main_frame.m_up_pushButton.setEnabled(True)
+        self.main_frame.m_down_pushButton.setEnabled(True)
+        self.main_frame.m_in_pushButton.setEnabled(True)
+        self.main_frame.m_out_pushButton.setEnabled(True)
+        self.main_frame.m_stop_all_pushButton.setEnabled(True)
+        self.main_frame.m_up_pushButton.setStyleSheet(u"background:rgb(85, 255, 0)")
+        self.main_frame.m_down_pushButton.setStyleSheet(u"background:rgb(85, 255, 0)")
+        self.main_frame.m_in_pushButton.setStyleSheet(u"background:rgb(85, 170, 255)")
+        self.main_frame.m_out_pushButton.setStyleSheet(u"background:rgb(85, 170, 255)")
+        self.main_frame.m_stop_all_pushButton.setStyleSheet(u"background:rgb(255, 145, 137)")
+        
+            
     def show_massege_box_info(self,title,text):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Information)
