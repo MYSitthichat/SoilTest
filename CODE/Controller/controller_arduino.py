@@ -4,7 +4,7 @@ import serial as ser
 class ControllerArduino(QThread,QObject):
     displace_xy_data = Signal(list)
     connect_serial_arduino_signal = Signal()
-        
+
     def __init__(self):    
         super(ControllerArduino, self).__init__()
         self.running = True
@@ -19,7 +19,7 @@ class ControllerArduino(QThread,QObject):
         self.stop_mx = (b'm2s\n')
         self.stop_all_m = (b'm1s\n'+b'm2s\n')
 
-        
+
     def run(self):
         while self.running:
             try:
@@ -27,8 +27,8 @@ class ControllerArduino(QThread,QObject):
                 if self.ar_data != "" :
                     if len(self.ar_data.split(",")) == 2: 
                         self.ar_data = self.ar_data.split(",")
-                        self.ar_x = self.ar_data[0]
-                        self.ar_y = self.ar_data[1]
+                        self.ar_x = self.ar_data[1]
+                        self.ar_y = self.ar_data[0]
                         self.disxy_data = [self.ar_x,self.ar_y]
                         self.displace_xy_data.emit(self.disxy_data)
                     else:
@@ -36,7 +36,6 @@ class ControllerArduino(QThread,QObject):
                 else:
                     self.ar_data = ""
             except Exception as e:
-                # print(e)
                 pass
             self.msleep(100)  
 
@@ -47,7 +46,7 @@ class ControllerArduino(QThread,QObject):
         
     
     def get_comport(self,Arduino_comport):
-        self.arduino_serial = ser.Serial(port=Arduino_comport, baudrate=115200, timeout=1)
+        self.arduino_serial = ser.Serial(port=Arduino_comport, baudrate=9600, timeout=1)
         if self.arduino_serial.is_open:
             self.connect_serial_arduino_signal.emit()
         else:

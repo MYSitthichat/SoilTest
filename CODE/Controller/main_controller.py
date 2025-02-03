@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QMessageBox
 from Controller.read_loadcell import Readloadcell
 from Controller.controller_arduino import ControllerArduino
 import  time
+from threading import Thread
 
 class MainController(QObject):
     def __init__(self):
@@ -42,17 +43,18 @@ class MainController(QObject):
         self.CT_arduino.displace_xy_data.connect(self.update_displace_data)
         self.main_frame.m_up_pushButton.clicked.connect(self.m_up_pressed)
         self.main_frame.m_down_pushButton.clicked.connect(self.m_down_pressed)
-        self.main_frame.m_in_pushButton.clicked.connect(self.m_in_pressed)
-        self.main_frame.m_out_pushButton.clicked.connect(self.m_out_pressed)
-        self.main_frame.m_stop_all_pushButton.clicked.connect(self.steop_all_motors)
+        self.main_frame.m_in_pushButton.clicked.connect(self.m_out_pressed)
+        self.main_frame.m_out_pushButton.clicked.connect(self.m_in_pressed)
+        self.main_frame.m_stop_all_pushButton.clicked.connect(self.stop_all_motors)
         self.serial_consuc =False
         self.serial_ar_con = False
+        self.mono_test = False
+        self.monotonic_state = 0
         self.start_program()
         self.show_parameter()
         
     @Slot()
     @Slot(str)
-    
     
     def port_updated(self, ports):
         if len(ports) == 0:
@@ -78,12 +80,6 @@ class MainController(QObject):
                 self.main_frame.LX_Port_comboBox.addItem(port.device)
                 self.main_frame.Arduino_Port_comboBox.addItem(port.device)
 
-    def start_button_pressed(self):
-        print("Start Clicked")
-        
-    def stop_button_pressed(self):
-        print("Stop Clicked")
-        
     def clear_button_pressed(self):
         print("Clear Clicked")
         
@@ -150,35 +146,37 @@ class MainController(QObject):
         self.disable_ui_parameter()
     
     def update_loadcell_data(self,load_cell_value):
-        loadcell_Y = load_cell_value[0]
-        loadcell_X = load_cell_value[1]
-        self.main_frame.test_weight_y_lineEdit.setText(loadcell_Y)
-        self.main_frame.test_weight_x_lineEdit.setText(loadcell_X)
-        self.main_frame.r_weight_x_lineEdit.setText(loadcell_X)
-        self.main_frame.r_weight_y_lineEdit.setText(loadcell_Y)
+        self.loadcell_Y = load_cell_value[0]
+        self.loadcell_X = load_cell_value[1]
+        self.main_frame.test_weight_y_lineEdit.setText(self.loadcell_Y)
+        self.main_frame.test_weight_x_lineEdit.setText(self.loadcell_X)
+        self.main_frame.r_weight_x_lineEdit.setText(self.loadcell_X)
+        self.main_frame.r_weight_y_lineEdit.setText(self.loadcell_Y)
     
     def update_displace_data(self,disxy_data):
-        dis_x = disxy_data[0]
-        dis_y = disxy_data[1]
+        self.dis_x = disxy_data[0]
+        self.dis_y = disxy_data[1]
         self.main_frame.test_dis_x_lineEdit.setEnabled(False)
         self.main_frame.test_dis_y_lineEdit.setEnabled(False)
-        self.main_frame.test_dis_x_lineEdit.setText(dis_x)
-        self.main_frame.test_dis_y_lineEdit.setText(dis_y)
-        
-        
+        self.main_frame.test_dis_x_lineEdit.setText(self.dis_x)
+        self.main_frame.test_dis_y_lineEdit.setText(self.dis_y)
         
     def monotonic_selected(self):
         self.monotonic_UI()
+        self.monotonic_test = True
+        self.cyclic_test = False
         
     def cyclic_selected(self):
         self.cyclic_UI()
+        self.cyclic_test = True
+        self.monotonic_test = False
     
     def m_up_pressed(self):
-        print("M UP")
+        # print("M UP")
         self.CT_arduino.up_motors_y()
         
     def m_down_pressed(self):
-        print("M DOWN")
+        # print("M DOWN")
         self.CT_arduino.down_motors_y()
     
     def m_in_pressed(self):
@@ -189,8 +187,8 @@ class MainController(QObject):
         print("M OUT")
         self.CT_arduino.out_motors_x()
         
-    def steop_all_motors(self):
-        print("STOP ALL")
+    def stop_all_motors(self):
+        # print("STOP ALL")
         self.CT_arduino.stop_all_motors()
         
     def connect_serial_XY(self):
@@ -363,6 +361,10 @@ class MainController(QObject):
         self.main_frame.m_in_pushButton.setEnabled(False)
         self.main_frame.m_out_pushButton.setEnabled(False)
         self.main_frame.m_stop_all_pushButton.setEnabled(False)
+        self.main_frame.test_start_pushButton.setEnabled(False)
+        self.main_frame.test_stop_pushButton.setEnabled(False)
+        self.main_frame.test_clear_pushButton.setEnabled(False)
+        self.main_frame.test_save_pushButton.setEnabled(False)
         self.main_frame.st_config_pushButton.setStyleSheet(u"background:rgb(115, 174, 253)")
         self.main_frame.st_save_pushButton.setStyleSheet(u"background:gray")
         self.main_frame.st_pwm_x_lineEdit.setStyleSheet(u"background:gray")
@@ -376,6 +378,10 @@ class MainController(QObject):
         self.main_frame.m_in_pushButton.setStyleSheet(u"background:gray")
         self.main_frame.m_out_pushButton.setStyleSheet(u"background:gray")
         self.main_frame.m_stop_all_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.test_start_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.test_stop_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.test_clear_pushButton.setStyleSheet(u"background:gray")
+        self.main_frame.test_save_pushButton.setStyleSheet(u"background:gray")
         
     def enable_m_controll(self):
         self.main_frame.m_up_pushButton.setEnabled(True)
@@ -383,13 +389,20 @@ class MainController(QObject):
         self.main_frame.m_in_pushButton.setEnabled(True)
         self.main_frame.m_out_pushButton.setEnabled(True)
         self.main_frame.m_stop_all_pushButton.setEnabled(True)
+        self.main_frame.test_start_pushButton.setEnabled(True)
+        self.main_frame.test_stop_pushButton.setEnabled(True)
+        self.main_frame.test_clear_pushButton.setEnabled(True)
+        self.main_frame.test_save_pushButton.setEnabled(True)
         self.main_frame.m_up_pushButton.setStyleSheet(u"background:rgb(85, 255, 0)")
         self.main_frame.m_down_pushButton.setStyleSheet(u"background:rgb(85, 255, 0)")
         self.main_frame.m_in_pushButton.setStyleSheet(u"background:rgb(85, 170, 255)")
         self.main_frame.m_out_pushButton.setStyleSheet(u"background:rgb(85, 170, 255)")
         self.main_frame.m_stop_all_pushButton.setStyleSheet(u"background:rgb(255, 145, 137)")
+        self.main_frame.test_start_pushButton.setStyleSheet(u"background:rgb(155, 221, 163)")
+        self.main_frame.test_stop_pushButton.setStyleSheet(u"background:rgb(255, 61, 2)")
+        self.main_frame.test_clear_pushButton.setStyleSheet(u"background:rgb(0, 170, 255)")
+        self.main_frame.test_save_pushButton.setStyleSheet(u"background:rgb(170, 255, 255)")
         
-            
     def show_massege_box_info(self,title,text):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Information)
@@ -411,4 +424,90 @@ class MainController(QObject):
         msg_box.setText(text)
         msg_box.exec()
     
-    # set parameter to ui frame
+    # ========= START BUTTON =========
+    def start_button_pressed(self):
+        try:
+            if self.monotonic_test:
+                self.start_monotonic_test()
+                
+            elif self.cyclic_test:
+                pass
+            
+        except Exception as e:
+            self.show_massege_box_error("ERROR",f"Not Selected Test Type")
+                
+    def stop_button_pressed(self):
+        try:
+            if self.monotonic_test:
+                self.stop_monotonic_test()
+            elif self.cyclic_test:
+                pass
+        except Exception as e:
+            self.show_massege_box_error("ERROR",f"Not Selected Test Type")
+    
+    # ============== test monotonic ====================
+    
+    def run_monotonic_test(self):
+        # print(self.loadcell_Y,self.loadcell_X,self.dis_x,self.dis_y)
+        monotonic_grap_wiegth_y = 5.0
+        while self.mono_test:
+            self.limit_weight_y = float(self.main_frame.st_limit_weight_y_lineEdit.text())
+            self.limit_weight_x = float(self.main_frame.st_limit_weight_x_lineEdit.text())
+            self.limit_distance_x = float(self.main_frame.st_limit_distance_x_lineEdit.text())
+            self.limit_distance_y = float(self.main_frame.st_limit_distance_y_lineEdit.text())
+            self.weight_y_recommand = float(self.main_frame.st_weight_y_lineEdit.text())
+            self.load_cell_y_data = float(self.loadcell_Y) 
+            self.dis_mono_x = float(self.dis_x)
+            if self.monotonic_state == 0:
+                self.CT_arduino.stop_all_motors()
+            
+            elif self.monotonic_state == 1:
+                self.CT_arduino.down_motors_y()
+                time.sleep(0.5)
+                self.monotonic_state = 2
+            
+            elif self.monotonic_state == 2:
+                if self.load_cell_y_data >= self.weight_y_recommand +- monotonic_grap_wiegth_y:
+                    self.CT_arduino.stop_motors_y()
+                    self.monotonic_state = 3
+                else:
+                    pass
+            elif self.monotonic_state == 3:
+                self.CT_arduino.in_motors_x()
+                self.monotonic_state = 4
+                time.sleep(0.5)
+                
+            elif self.monotonic_state == 4:
+                if self.load_cell_y_data > self.weight_y_recommand +- monotonic_grap_wiegth_y:
+                    self.CT_arduino.up_motors_y()
+                    
+                if self.load_cell_y_data < self.weight_y_recommand:
+                    self.CT_arduino.down_motors_y()
+                    
+                if self.load_cell_y_data == self.weight_y_recommand:
+                    self.CT_arduino.stop_motors_y()
+                
+                if self.dis_mono_x >= self.limit_distance_x:
+                    self.CT_arduino.stop_motors_x()
+                    self.CT_arduino.stop_motors_y()
+                    self.monotonic_state = 5
+                    
+            elif self.monotonic_state == 5:
+                self.CT_arduino.stop_all_motors()
+                self.monotonic_state = 0
+                self.mono_test = False
+            time.sleep(0.1)
+
+    def start_monotonic_test(self):
+        self.mono_test = True
+        self.monotonic_state = 1
+        self.monotonic_thread = Thread(target=self.run_monotonic_test)
+        self.monotonic_thread.start()
+
+    def stop_monotonic_test(self):
+        self.mono_test = False
+        self.monotonic_state = 0
+        self.CT_arduino.stop_all_motors()
+        self.monotonic_thread.join()
+        
+    # ============== test monotonic ====================
