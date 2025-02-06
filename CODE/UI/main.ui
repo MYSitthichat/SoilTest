@@ -1044,6 +1044,23 @@ background:rgb(255, 255, 255)
       <property name="frameShadow">
        <enum>QFrame::Shadow::Raised</enum>
       </property>
+      <widget class="QTextEdit" name="test_output_textEdit">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>1071</width>
+         <height>611</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>TH Niramit AS</family>
+         <pointsize>24</pointsize>
+         <bold>true</bold>
+        </font>
+       </property>
+      </widget>
      </widget>
      <widget class="QPushButton" name="test_start_pushButton">
       <property name="geometry">
@@ -1376,7 +1393,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>PWM X</string>
+       <string>SPEED Y</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="st_pwm_x_lineEdit">
@@ -1419,7 +1436,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>PWM Y</string>
+       <string>SPEED X</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="st_pwm_y_lineEdit">
@@ -1898,7 +1915,7 @@ background:rgb(255, 255, 255)
        </property>
       </item>
      </widget>
-     <widget class="QComboBox" name="Arduino_Port_comboBox">
+     <widget class="QComboBox" name="LDVT_Port_comboBox">
       <property name="geometry">
        <rect>
         <x>460</x>
@@ -1923,7 +1940,7 @@ background:rgb(255, 255, 255)
      <widget class="QPushButton" name="con_port_pushButton">
       <property name="geometry">
        <rect>
-        <x>670</x>
+        <x>860</x>
         <y>580</y>
         <width>181</width>
         <height>51</height>
@@ -1946,7 +1963,7 @@ background:rgb(255, 255, 255)
      <widget class="QPushButton" name="dis_port_pushButton">
       <property name="geometry">
        <rect>
-        <x>670</x>
+        <x>860</x>
         <y>640</y>
         <width>181</width>
         <height>51</height>
@@ -2012,7 +2029,7 @@ background:rgb(255, 255, 255)
        <string>Load Y Port</string>
       </property>
      </widget>
-     <widget class="QLabel" name="comport_arduino_label">
+     <widget class="QLabel" name="comport_LVDT_label">
       <property name="geometry">
        <rect>
         <x>470</x>
@@ -2032,7 +2049,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>Arduino Port</string>
+       <string>LVDT Port</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="st_Area_lineEdit">
@@ -2421,9 +2438,9 @@ background:rgb(255, 255, 255)
      <widget class="QLabel" name="st_rpm_x_label">
       <property name="geometry">
        <rect>
-        <x>780</x>
+        <x>770</x>
         <y>90</y>
-        <width>61</width>
+        <width>81</width>
         <height>31</height>
        </rect>
       </property>
@@ -2438,15 +2455,15 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>RPM</string>
+       <string>0-100%</string>
       </property>
      </widget>
      <widget class="QLabel" name="st_rpm_y_label">
       <property name="geometry">
        <rect>
-        <x>780</x>
+        <x>770</x>
         <y>160</y>
-        <width>61</width>
+        <width>81</width>
         <height>31</height>
        </rect>
       </property>
@@ -2461,7 +2478,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>RPM</string>
+       <string>0-100%</string>
       </property>
      </widget>
      <widget class="QLabel" name="st_weight_y_label">
@@ -2507,7 +2524,54 @@ background:rgb(255, 255, 255)
        <set>Qt::AlignmentFlag::AlignCenter</set>
       </property>
      </widget>
+     <widget class="QComboBox" name="motor_Port_comboBox">
+      <property name="geometry">
+       <rect>
+        <x>670</x>
+        <y>620</y>
+        <width>151</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>28</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <item>
+       <property name="text">
+        <string>None</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="comport_motor_label">
+      <property name="geometry">
+       <rect>
+        <x>680</x>
+        <y>570</y>
+        <width>161</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 222)</string>
+      </property>
+      <property name="text">
+       <string>Motor Port</string>
+      </property>
+     </widget>
      <zorder>st_label</zorder>
+     <zorder>st_rpm_x_label</zorder>
+     <zorder>st_rpm_y_label</zorder>
      <zorder>st_machine_label</zorder>
      <zorder>st_test_label</zorder>
      <zorder>st_pwm_x_label</zorder>
@@ -2536,12 +2600,12 @@ background:rgb(255, 255, 255)
      <zorder>st_cyclic_label</zorder>
      <zorder>LX_Port_comboBox</zorder>
      <zorder>LY_Port_comboBox</zorder>
-     <zorder>Arduino_Port_comboBox</zorder>
+     <zorder>LDVT_Port_comboBox</zorder>
      <zorder>con_port_pushButton</zorder>
      <zorder>dis_port_pushButton</zorder>
      <zorder>comport_LX_label</zorder>
      <zorder>comport_LY_label</zorder>
-     <zorder>comport_arduino_label</zorder>
+     <zorder>comport_LVDT_label</zorder>
      <zorder>st_Area_lineEdit</zorder>
      <zorder>st_Area_label</zorder>
      <zorder>st_Area_unit_label</zorder>
@@ -2558,10 +2622,10 @@ background:rgb(255, 255, 255)
      <zorder>st_line_9</zorder>
      <zorder>st_line_10</zorder>
      <zorder>st_line_11</zorder>
-     <zorder>st_rpm_x_label</zorder>
-     <zorder>st_rpm_y_label</zorder>
      <zorder>st_weight_y_label</zorder>
      <zorder>st_weight_y_lineEdit</zorder>
+     <zorder>motor_Port_comboBox</zorder>
+     <zorder>comport_motor_label</zorder>
     </widget>
    </widget>
    <widget class="QLabel" name="background_label">
