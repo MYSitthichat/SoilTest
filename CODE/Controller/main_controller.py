@@ -175,10 +175,14 @@ class MainController(QObject):
     def update_loadcell_data(self,load_cell_value):
         self.loadcell_Y = load_cell_value[0]
         self.loadcell_X = load_cell_value[1]
-        self.main_frame.test_weight_y_lineEdit.setText(self.loadcell_Y)
-        self.main_frame.test_weight_x_lineEdit.setText(self.loadcell_X)
-        self.main_frame.r_weight_x_lineEdit.setText(self.loadcell_X)
-        self.main_frame.r_weight_y_lineEdit.setText(self.loadcell_Y)
+        self.loadcell_X = float(self.loadcell_X)
+        self.loadcell_Y = float(self.loadcell_Y)
+        self.loadcell_X = round(self.loadcell_X * 0.0098, 2)
+        self.loadcell_Y = round(self.loadcell_Y * 0.0098, 2)
+        self.main_frame.test_weight_y_lineEdit.setText(str(self.loadcell_Y))
+        self.main_frame.test_weight_x_lineEdit.setText(str(self.loadcell_X))
+        self.main_frame.r_weight_x_lineEdit.setText(str(self.loadcell_X))
+        self.main_frame.r_weight_y_lineEdit.setText(str(self.loadcell_Y))
     
     def update_displace_data(self,disxy_data):
         self.dis_x = disxy_data[0]
@@ -527,9 +531,11 @@ class MainController(QObject):
                 self.CT_motor.out_motors_x()
                 self.monotonic_state = 7
                 
-            # elif self.monotonic_state == 7:
-            #     print((self.load_cell_y_data),(self.dis_mono_x))
-            #     if self.load_cell_y_data <= monotonic_stopmy +- 5.0:
+            elif self.monotonic_state == 7:
+                print((self.load_cell_y_data))
+                print("77777777")
+                if self.load_cell_y_data <= monotonic_stopmy +- 5.0:
+                    print("stop y")
             #         self.CT_motor.stop_motors_y()
             #         print("stop y")
                 #     monotonic_success_wiegthY = True
