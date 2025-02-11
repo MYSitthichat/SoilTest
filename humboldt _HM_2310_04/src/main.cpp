@@ -1,126 +1,56 @@
 #include <Arduino.h>
-#include <Wire.h>
-#include <Adafruit_ADS1015.h>
+#include <ADS1X15.h>
 
-// กำหนดที่อยู่ของเซ็นเซอร์
-Adafruit_ADS1115 ads1(0x48); // ตัวที่ 1 (ADDR → GND)
-Adafruit_ADS1115 ads2(0x49); // ตัวที่ 2 (ADDR → VDD)
+ADS1115 ADS1(0x48);  // ที่อยู่ I2C ของเซ็นเซอร์ตัวที่ 1
+ADS1115 ADS2(0x49);  // ที่อยู่ I2C ของเซ็นเซอร์ตัวที่ 2
 
-// ค่าคงที่สำหรับการคำนวณระยะทาง
-float SCALE_FACTOR1 = 625.990; // mm/V สำหรับ Sensor 1
-float SCALE_FACTOR2 = 925.864; // mm/V สำหรับ Sensor 2
-float baseVoltage1 = 3.54;
-float baseVoltage2 = 3.54;
+float displacement1 = 0.0;
+float displacement2 = 0.0;
+float average1 = 0.0;
+float average2 = 0.0;
+static float sum1 = 0.0;  
+static float sum2 = 0.0;  
+static int count = 0;    
+static float displacementList1[100] = {0};
+static float displacementList2[100] = {0};
 
-bool isReadingSensors = true;
-
-// ฟังก์ชัน
-float readAverageVoltage(Adafruit_ADS1115 &ads, int samples);
-void readAndDisplaySensors();
-void handleSerialCommands();
-void printHelp();
-
-void setup()
+void setup() 
 {
-  Serial.begin(9600);
-  Serial.println("System Initialized");
+  Serial.begin(115200);
+  Serial.print("System online 🌟 ✅\n");
   Wire.begin();
-  ads1.begin();
-  ads2.begin();
-
-  // ตั้งค่า Gain หลังจากเริ่มต้น ADS1115
-  ads1.setGain(GAIN_ONE);
-  ads2.setGain(GAIN_ONE);
-
-  baseVoltage1 = readAverageVoltage(ads1, 20);
-  baseVoltage2 = readAverageVoltage(ads2, 20);
+  ADS1.begin();
+  ADS1.setGain(16);
+  ADS1.setDataRate(7);
+  ADS2.begin();
+  ADS2.setGain(16);
+  ADS2.setDataRate(7);
 }
 
-void loop()
+void loop() 
 {
-  handleSerialCommands(); // ตรวจสอบคำสั่งจาก Serial Monitor
-  if (isReadingSensors)
-  {
-    readAndDisplaySensors(); // อ่านค่าเซ็นเซอร์และแสดงผล
-  }
-}
+    int16_t val_01 = ADS1.readADC_Differential_0_1();  
+    int16_t val_02 = ADS2.readADC_Differential_0_1();
+    float volts_01 = ADS1.toVoltage(val_01); 
+    float volts_02 = ADS2.toVoltage(val_02); 
 
-void readAndDisplaySensors()
-{
-  static unsigned long lastSensorReadTime = 0;
-  const unsigned long sensorReadInterval = 500; // 500 ms
+    displacement1 = 100*((volts_01 / 3.65) * 17.00); 
+    displacement2 = 100*((volts_02 / 3.65) * 25.00);
 
-  if (millis() - lastSensorReadTime >= sensorReadInterval)
-  {
-    lastSensorReadTime = millis();
+    displacementList1[count] = displacement1;
+    sum1 += displacement1;
+    displacementList2[count] = displacement2;
+    sum2 += displacement2;
+    count++;
 
-    float voltage1 = readAverageVoltage(ads1, 20);
-    float voltage2 = readAverageVoltage(ads2, 20);
-    float distance1 = max(0.0, SCALE_FACTOR1 * (voltage1 - baseVoltage1));
-    float distance2 = max(0.0, SCALE_FACTOR2 * (voltage2 - baseVoltage2));
-
-    Serial.print(distance1, 3);
-    Serial.print(",");
-    Serial.println(distance2, 3);
-  }
-}
-
-float readAverageVoltage(Adafruit_ADS1115 &ads, int samples)
-{
-  double totalVoltage = 0;
-  for (int i = 0; i < samples; i++)
-  {
-    int16_t adcValue = ads.readADC_SingleEnded(0);
-    totalVoltage += adcValue * 0.1875 / 1000.0;
-  }
-  return totalVoltage / samples;
-}
-
-// ฟังก์ชันตรวจสอบคำสั่งจาก Serial Monitor
-void handleSerialCommands()
-{
-  if (Serial.available())
-  {
-    String command = Serial.readStringUntil('\n');
-    command.trim();
-
-    if (command == "help")
-    {
-      printHelp();
-    }
-    else if (command == "stopsensors")
-    {
-      isReadingSensors = false;
-      Serial.println("Sensor reading stopped.");
-    }
-    else if (command == "startsensors")
-    {
-      isReadingSensors = true;
-      Serial.println("Sensor reading started.");
-    }
-    else if (command == "STOP_READING")
-    {
-      isReadingSensors = false;
-      Serial.println("Distance measurement stopped.");
-    }
-    else if (command == "START_READING")
-    {
-      isReadingSensors = true;
-      Serial.println("Distance measurement started.");
-    }
-    else
-    {
-      Serial.println("Invalid command. Type 'help' to see the list of available commands.");
+    if (count == 100) {
+      average1 = sum1 / 100;  
+      average2 = sum2 / 100;  
+      Serial.print(average1, 3);
+      Serial.print(", ");
+      Serial.println(average2, 3);
+      sum1 = 0.0;
+      sum2 = 0.0;
+      count = 0;
     }
   }
-}
-
-void printHelp()
-{
-  Serial.println("Available commands:");
-  Serial.println("help          - Display this help message");
-  Serial.println("stopsensors   - Stop sensor readings");
-  Serial.println("startsensors  - Start sensor readings");
-  Serial.println("STOP_READING  - Stop distance measurement");
-  Serial.println("START_READING - Start distance measurement");
-}
