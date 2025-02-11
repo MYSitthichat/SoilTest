@@ -282,7 +282,7 @@ void handleSerialCommand()
                 return;
             }
 
-            speedDelay[motorIndex] = map(speedLevel, 0, 100, 2000, 260);
+            speedDelay[motorIndex] = map(speedLevel, 0, 100, 100000, 260);
             Serial.print("✅ Motor ");
             Serial.print(motorIndex + 1);
             Serial.print(" Speed set to ");
@@ -299,13 +299,10 @@ void handleSerialCommand()
         else if (command == "m1")
         {
             controlMotor(0, true, true);
-            speedDelay[0] = 260;
-            Serial.println("Motor 1 started at default speed (260us delay)");
         }
         else if (command == "m1r")
         {
             controlMotor(0, true, false);
-            speedDelay[0] = 260;
         }
         else if (command == "m1s")
         {
@@ -314,13 +311,10 @@ void handleSerialCommand()
         else if (command == "m2")
         {
             controlMotor(1, true, true);
-            speedDelay[1] = 260;
-            Serial.println("Motor 2 started at default speed (260us delay)");
         }
         else if (command == "m2r")
         {
             controlMotor(1, true, false);
-            speedDelay[1] = 260;
         }
         else if (command == "m2s")
         {
@@ -329,7 +323,6 @@ void handleSerialCommand()
         else if (command == "m1m2")
         {
             controlMotorsSequential(true, true, true, true);
-            speedDelay[0] = 260;
         }
         else if (command == "m1m2r")
         {
