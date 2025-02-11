@@ -548,6 +548,8 @@ class MainController(QObject):
         self.main_frame.test_k_set_pushButton.setEnabled(True)
         self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:rgb(206, 223, 255)")
         self.main_frame.test_output_textEdit.append("START MONOTONIC TEST")
+        self.area_test_monotonic = float(self.main_frame.st_Area_lineEdit.text())
+        self.monotonic_k_param = float(self.main_frame.st_K_lineEdit.text())
         while self.mono_test:
             self.limit_weight_y = float(self.main_frame.st_limit_weight_y_lineEdit.text())
             self.limit_weight_x = float(self.main_frame.st_limit_weight_x_lineEdit.text())
@@ -556,11 +558,13 @@ class MainController(QObject):
             self.weight_y_recommand = float(self.main_frame.st_weight_y_lineEdit.text())
             self.load_cell_y_test = float(self.main_frame.test_weight_y_lineEdit.text())
             
+            self.sigma_y = round(self.load_cell_y_test/self.area_test_monotonic,2)
+            
             if self.monotonic_state == 1: #กดให้ได้ค่าน้ำหนักที่ต้องการ Y
                 self.main_frame.test_output_textEdit.append("เคลื่อนแกน Y ไปที่ค่าที่ต้องการ")
                 self.CT_motor_Y.down_motors_y()
-                self.monotonic_state = 2
-
+                self.monotonic_state = 2                
+                
             elif self.monotonic_state == 2: #กดให้ได้ค่าน้ำหนักที่ต้องการ X
                 if self.load_cell_y_test >= self.weight_y_recommand +- self.grap_weight_y:
                     self.CT_motor_Y.stop_motors_y()
@@ -579,7 +583,7 @@ class MainController(QObject):
                     self.show_test()
                     self.monotonic_state = 5
                 else:
-                    print("wait")
+                    # print("wait")
                     pass
             
             elif self.monotonic_state == 5:
@@ -588,9 +592,19 @@ class MainController(QObject):
                 self.clear_output_data_frame.emit()
                 self.CT_motor_X.in_motors_x()
                 self.monotonic_state = 6
-            
-            elif self.monotonic_state == 6:
-                print("State 6")
+                
+            elif self.monotonic_state == 666:#is debug case 666
+                self.old_dis_y = getattr(self, 'old_dis_y', 0.0)
+                diff_dis_y = round(float(self.dis_y) - self.old_dis_y,3)
+                new_sigma_y = round(diff_dis_y*(self.monotonic_k_param+self.sigma_y),3)
+                new_sigma_y = round(new_sigma_y+self.sigma_y,3)
+                
+                # self.main_frame.test_output_textEdit.append(f"Old DisY: {self.old_dis_y}, New DisY: {self.dis_y}, Difference: {diff_dis_y} , New SigmaY: {new_sigma_y} , SigmaY: {self.sigma_y}")
+                
+                
+                self.old_dis_y = float(self.dis_y)
+                self.delay(1)
+
                 
                 
                     
@@ -598,7 +612,8 @@ class MainController(QObject):
 
     def start_monotonic_test(self):
         self.mono_test = True
-        self.monotonic_state = 1
+        # self.monotonic_state = 1 #useing 1
+        self.monotonic_state = 666 #Debug 666
         self.monotonic_thread = Thread(target=self.run_monotonic_test)
         self.monotonic_thread.start()
 
