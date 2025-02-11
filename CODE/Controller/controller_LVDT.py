@@ -24,6 +24,8 @@ class ControllerLVDT(QThread,QObject):
                         self.ar_y = self.ar_data[0]
                         self.disxy_data = [self.ar_x,self.ar_y]
                         self.displace_xy_data.emit(self.disxy_data)
+                        self.LVDT_serial.flush()
+                        self.LVDT_serial.reset_input_buffer()
                     else:
                         self.ar_data = ""
                 else:

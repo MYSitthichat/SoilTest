@@ -3,17 +3,19 @@ from view.view_main_frame import MainFrame
 from Controller.databass_controller import DatabassController
 from Controller.check_comport_controller import SerialPortChecker
 import serial as ser
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox ,QFileDialog
 from Controller.read_loadcell import Readloadcell
 from Controller.controller_LVDT import ControllerLVDT
 from Controller.controller_motor_X import ControllerMotorX
 from Controller.controller_motor_Y import ControllerMotorY
 import  time
 from threading import Thread
+import csv
 
 class MainController(QObject):
     show_message_info = Signal(str,str)
-    sohw_message_error = Signal(str,str)
+    show_message_error = Signal(str,str)
+    calculate_k_every_time = Signal()
     clear_output_data_frame = Signal()
     
     def __init__(self):
@@ -63,6 +65,7 @@ class MainController(QObject):
         self.main_frame.test_k_set_pushButton.clicked.connect(self.set_k_parameter_pressed)
         self.show_message_info.connect(self.show_massege_box_info)
         self.clear_output_data_frame.connect(self.clear_data_frame)
+        self.calculate_k_every_time.connect(self.calculate_k_parameter)
         self.serial_consuc =False
         self.serial_ar_con = False
         self.mono_test = False
@@ -82,6 +85,7 @@ class MainController(QObject):
         self.test_set_zero_y = False
         
         self.set_k_param_success = False
+        self.start_monotonic_calculate_k = False
         self.start_program()
         self.show_parameter()
         
@@ -544,12 +548,13 @@ class MainController(QObject):
     
     def run_monotonic_test(self):
         self.grap_weight_y = 0.05
+        self.monotonic_k_param = 0.0
         self.set_k_param_success = False
         self.main_frame.test_k_set_pushButton.setEnabled(True)
         self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:rgb(206, 223, 255)")
         self.main_frame.test_output_textEdit.append("START MONOTONIC TEST")
         self.area_test_monotonic = float(self.main_frame.st_Area_lineEdit.text())
-        self.monotonic_k_param = float(self.main_frame.st_K_lineEdit.text())
+        
         while self.mono_test:
             self.limit_weight_y = float(self.main_frame.st_limit_weight_y_lineEdit.text())
             self.limit_weight_x = float(self.main_frame.st_limit_weight_x_lineEdit.text())
@@ -557,8 +562,10 @@ class MainController(QObject):
             self.limit_distance_y = float(self.main_frame.st_limit_distance_y_lineEdit.text())
             self.weight_y_recommand = float(self.main_frame.st_weight_y_lineEdit.text())
             self.load_cell_y_test = float(self.main_frame.test_weight_y_lineEdit.text())
+            self.dis_x_mono = round(float(self.main_frame.test_dis_x_lineEdit.text()),2)
             
             self.sigma_y = round(self.load_cell_y_test/self.area_test_monotonic,2)
+            
             
             if self.monotonic_state == 1: #กดให้ได้ค่าน้ำหนักที่ต้องการ Y
                 self.main_frame.test_output_textEdit.append("เคลื่อนแกน Y ไปที่ค่าที่ต้องการ")
@@ -577,6 +584,7 @@ class MainController(QObject):
             elif self.monotonic_state == 4:
                 self.clear_output_data_frame.emit()
                 if self.set_k_param_success == True:
+                    self.monotonic_k_param = float(self.main_frame.st_K_lineEdit.text())
                     self.main_frame.test_k_set_pushButton.setEnabled(False)
                     self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:gray")
                     time.sleep(3)
@@ -590,57 +598,99 @@ class MainController(QObject):
                 self.main_frame.test_output_textEdit.append("เคลื่อนแกน X ไปที่ limit DisX ที่ตั้งไว้")
                 self.delay(3)
                 self.clear_output_data_frame.emit()
+                self.start_monotonic_calculate_k = True
                 self.CT_motor_X.in_motors_x()
                 self.monotonic_state = 6
                 
-            elif self.monotonic_state == 666:#is debug case 666
-                self.old_dis_y = getattr(self, 'old_dis_y', 0.0)
-                diff_dis_y = round(float(self.dis_y) - self.old_dis_y,3)
-                new_sigma_y = round(diff_dis_y*(self.monotonic_k_param+self.sigma_y),3)
-                new_sigma_y = round(new_sigma_y+self.sigma_y,3)
+            elif self.monotonic_state == 6:
+                if self.new_sigma_y >= self.sigma_y:
+                    self.CT_motor_Y.down_motors_y()
+                if self.new_sigma_y <= self.sigma_y:
+                    self.CT_motor_Y.up_motors_y()
+                if self.dis_x_mono >= self.limit_distance_x:
+                    self.CT_motor_X.stop_motors_x()
+                    self.monotonic_state = 7
+                    
+            elif self.monotonic_state == 7:
+                self.show_message_info.emit("END TEST","เสร็จสิ้นการทดลองกรุณาใช้ระบบแมนนวลเพื่อถอยแกน X กลับ")
+                self.monotonic_state = 8
+            
+            elif self.monotonic_state == 8:
+                pass
                 
-                # self.main_frame.test_output_textEdit.append(f"Old DisY: {self.old_dis_y}, New DisY: {self.dis_y}, Difference: {diff_dis_y} , New SigmaY: {new_sigma_y} , SigmaY: {self.sigma_y}")
-                
-                
-                self.old_dis_y = float(self.dis_y)
-                self.delay(1)
+                    
+            elif self.monotonic_state == 666:#is debug case 666  
+                # self.calculte_k_start = Thread(target=self.calculate_k_parameter)
+                # self.calculte_k_start.start()
+                pass
+            
+            self.calculate_k_every_time.emit()
+            self.delay(0.5)
 
                 
                 
-                    
+    def calculate_k_parameter(self):
+        if self.start_monotonic_calculate_k == True:
+            self.old_dis_y = getattr(self, 'old_dis_y', 0.0)
+            self.diff_dis_y = round(float(self.dis_y) - self.old_dis_y,3)
+            self.new_sigma_y = round(self.diff_dis_y*(self.monotonic_k_param+self.sigma_y),3)
+            self.new_sigma_y = round(self.new_sigma_y+self.sigma_y,3) 
+            
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            self.main_frame.test_output_textEdit.append(f"{timestamp} , {self.dis_y} , {self.dis_x} , {self.loadcell_Y} , {self.loadcell_X} , {self.sigma_y} , {self.new_sigma_y}")
+            # self.main_frame.test_output_textEdit.append(f"Old DisY: {self.old_dis_y}, New DisY: {self.dis_y}, Difference: {self.diff_dis_y} , New SigmaY: {self.new_sigma_y} , SigmaY: {self.sigma_y}")
+            self.old_dis_y = float(self.dis_y)
+        else:
+            pass
 
 
     def start_monotonic_test(self):
         self.mono_test = True
-        # self.monotonic_state = 1 #useing 1
-        self.monotonic_state = 666 #Debug 666
+        self.monotonic_state = 1 #useing 1
+        # self.monotonic_state = 666 #Debug 666
+        # self.monotonic_k_param = float(self.main_frame.st_K_lineEdit.text())#deboger
         self.monotonic_thread = Thread(target=self.run_monotonic_test)
         self.monotonic_thread.start()
 
     def stop_monotonic_test(self):
         self.mono_test = False
+        self.start_monotonic_calculate_k = False
         self.monotonic_state = 0
         self.stop_all_motors()
         self.monotonic_thread.join()
         
 # ============== DEBUGEST ====================
     def test_save_button_pressed(self):
-        print("Save Clicked")
-        # self.mono_test = True
-        # self.monotonic_state = 1
-        # self.monotonic_thread = Thread(target=self.run_monotonic_test)
-        # self.monotonic_thread.start()
+        # Get the data from the text edit
+        data = self.main_frame.test_output_textEdit.toPlainText()
+        
+        # Ask user for file name
+        file_name, _ = QFileDialog.getSaveFileName(self.main_frame, "Save File", "", "CSV Files (*.csv);;Text Files (*.txt)")
+        
+        if file_name:
+            # Save to CSV
+            if file_name.endswith('.csv'):
+                with open(file_name, 'w', newline='') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(["time", "Dis Y(Dv)", "Dis X(Dh)", "loadcell Y (KN)", "loadcell X (KN)", "sigma Y (KN/M^2)", "newsigma Y (KN/M^2)"])
+                    for line in data.split('\n'):
+                        writer.writerow(line.split(','))
+            # Save to text file
+            elif file_name.endswith('.txt'):
+                with open(file_name, 'w') as txtfile:
+                    txtfile.write(data)
+            
+            self.show_message_info.emit("SAVE", f"Data saved to {file_name}")
+        else:
+            self.show_message_info.emit("SAVE", "Save operation cancelled")
         
     def test_clear_button_pressed(self):
-        print("Clear Clicked")
-        # self.mono_test = False
-        # self.monotonic_state = 0
-        # self.monotonic_thread.join()
+        self.clear_data_frame()
+
 
 # ============== DEBUGEST ====================
 
 
-        
     # ============== test monotonic ====================
     def delay(self,seconds):
         start_time = time.perf_counter()
