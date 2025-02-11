@@ -11,8 +11,8 @@ float average2 = 0.0;
 static float sum1 = 0.0;  
 static float sum2 = 0.0;  
 static int count = 0;    
-static float displacementList1[250] = {0};
-static float displacementList2[250] = {0};
+static float displacementList1[100] = {0};
+static float displacementList2[100] = {0};
 
 void setup() 
 {
@@ -43,9 +43,9 @@ void loop()
     sum2 += displacement2;
     count++;
 
-    if (count == 250) {
-      average1 = sum1 / 250;  
-      average2 = sum2 / 250;  
+    if (count == 100) {
+      average1 = sum1 / 100;  
+      average2 = sum2 / 100;  
       Serial.print(average1, 3);
       Serial.print(", ");
       Serial.println(average2, 3);
