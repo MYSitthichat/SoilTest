@@ -39,7 +39,7 @@ class ControllerLVDT(QThread,QObject):
         
     
     def get_comport(self,LVDT_comport):
-        self.LVDT_serial = ser.Serial(port=LVDT_comport, baudrate=115200, timeout=1)
+        self.LVDT_serial = ser.Serial(port=LVDT_comport, baudrate=9600, timeout=1)
         if self.LVDT_serial.is_open:
             self.connect_serial_arduino_signal.emit()
         else:

@@ -19,11 +19,7 @@ class Readloadcell(QThread,QObject):
             self.x_data = self.loadcell_X_serial.readline().decode('utf-8').strip()            
             load_cell_value = [self.y_data,self.x_data]
             self.load_cell_data.emit(load_cell_value)
-            self.loadcell_Y_serial.flush()
-            self.loadcell_X_serial.flush()
-            self.loadcell_Y_serial.reset_input_buffer()
-            self.loadcell_X_serial.reset_input_buffer()
-            self.msleep(70) 
+            self.msleep(70)  
             
 
     def stop(self):
