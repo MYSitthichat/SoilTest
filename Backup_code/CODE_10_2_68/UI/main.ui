@@ -2250,8 +2250,8 @@ background:rgb(255, 255, 255)
      <widget class="QPushButton" name="con_port_pushButton">
       <property name="geometry">
        <rect>
-        <x>1070</x>
-        <y>560</y>
+        <x>860</x>
+        <y>580</y>
         <width>181</width>
         <height>51</height>
        </rect>
@@ -2273,8 +2273,8 @@ background:rgb(255, 255, 255)
      <widget class="QPushButton" name="dis_port_pushButton">
       <property name="geometry">
        <rect>
-        <x>1070</x>
-        <y>620</y>
+        <x>860</x>
+        <y>640</y>
         <width>181</width>
         <height>51</height>
        </rect>
@@ -2834,7 +2834,7 @@ background:rgb(255, 255, 255)
        <set>Qt::AlignmentFlag::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QComboBox" name="motor_Port_x_comboBox">
+     <widget class="QComboBox" name="motor_Port_comboBox">
       <property name="geometry">
        <rect>
         <x>670</x>
@@ -2856,12 +2856,12 @@ background:rgb(255, 255, 255)
        </property>
       </item>
      </widget>
-     <widget class="QLabel" name="comport_motor_x_label">
+     <widget class="QLabel" name="comport_motor_label">
       <property name="geometry">
        <rect>
         <x>680</x>
         <y>570</y>
-        <width>141</width>
+        <width>161</width>
         <height>51</height>
        </rect>
       </property>
@@ -2876,7 +2876,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>Motor X Port</string>
+       <string>Motor Port</string>
       </property>
      </widget>
      <widget class="QLabel" name="st_kn_x_label">
@@ -2924,74 +2924,6 @@ background:rgb(255, 255, 255)
       <property name="text">
        <string>KN</string>
       </property>
-     </widget>
-     <widget class="QPushButton" name="test_k_set_pushButton">
-      <property name="geometry">
-       <rect>
-        <x>260</x>
-        <y>460</y>
-        <width>121</width>
-        <height>51</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>TH Niramit AS</family>
-        <pointsize>20</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:rgb(206, 223, 255)</string>
-      </property>
-      <property name="text">
-       <string>K SET</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="comport_motor_y_label">
-      <property name="geometry">
-       <rect>
-        <x>890</x>
-        <y>570</y>
-        <width>141</width>
-        <height>51</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>TH Niramit AS</family>
-        <pointsize>24</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:rgb(255, 255, 222)</string>
-      </property>
-      <property name="text">
-       <string>Motor Y Port</string>
-      </property>
-     </widget>
-     <widget class="QComboBox" name="motor_Port_y_comboBox">
-      <property name="geometry">
-       <rect>
-        <x>880</x>
-        <y>620</y>
-        <width>151</width>
-        <height>51</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>TH Niramit AS</family>
-        <pointsize>28</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <item>
-       <property name="text">
-        <string>None</string>
-       </property>
-      </item>
      </widget>
      <zorder>st_label</zorder>
      <zorder>st_cyclic_round_label</zorder>
@@ -3048,13 +2980,10 @@ background:rgb(255, 255, 255)
      <zorder>st_line_11</zorder>
      <zorder>st_weight_y_label</zorder>
      <zorder>st_weight_y_lineEdit</zorder>
-     <zorder>motor_Port_x_comboBox</zorder>
-     <zorder>comport_motor_x_label</zorder>
+     <zorder>motor_Port_comboBox</zorder>
+     <zorder>comport_motor_label</zorder>
      <zorder>st_kn_x_label</zorder>
      <zorder>st_kn_y_label</zorder>
-     <zorder>test_k_set_pushButton</zorder>
-     <zorder>comport_motor_y_label</zorder>
-     <zorder>motor_Port_y_comboBox</zorder>
     </widget>
    </widget>
    <widget class="QLabel" name="background_label">

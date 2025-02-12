@@ -24,8 +24,6 @@ class ControllerLVDT(QThread,QObject):
                         self.ar_y = self.ar_data[0]
                         self.disxy_data = [self.ar_x,self.ar_y]
                         self.displace_xy_data.emit(self.disxy_data)
-                        self.LVDT_serial.flush()
-                        self.LVDT_serial.reset_input_buffer()
                     else:
                         self.ar_data = ""
                 else:
@@ -41,7 +39,7 @@ class ControllerLVDT(QThread,QObject):
         
     
     def get_comport(self,LVDT_comport):
-        self.LVDT_serial = ser.Serial(port=LVDT_comport, baudrate=115200, timeout=1)
+        self.LVDT_serial = ser.Serial(port=LVDT_comport, baudrate=9600, timeout=1)
         if self.LVDT_serial.is_open:
             self.connect_serial_arduino_signal.emit()
         else:

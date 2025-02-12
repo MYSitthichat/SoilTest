@@ -47,8 +47,7 @@ class DatabassController(QObject):
             LIMIT_WEIGHT_X       INT    NOT NULL,
             LIMIT_WEIGHT_Y       INT    NOT NULL,
             LIMIT_DISTANCE_X     INT    NOT NULL,
-            LIMIT_DISTANCE_Y     INT    NOT NULL,
-            AREA_TEST            INT    NOT NULL);''')
+            LIMIT_DISTANCE_Y     INT    NOT NULL);''')
         conn.close() 
 
     def check_record_setting(self):
@@ -65,18 +64,18 @@ class DatabassController(QObject):
     
     def insert_defualt_record_setting(self):
         conn = sqlite3.connect(r'DATABASS/CT.db')
-        conn.execute("INSERT INTO SETTING (ID,PWM_X,PWM_Y,LIMIT_WEIGHT_X,LIMIT_WEIGHT_Y,LIMIT_DISTANCE_X,LIMIT_DISTANCE_Y,AREA_TEST) VALUES (1,0,0,0,0,0,0,0);")
+        conn.execute("INSERT INTO SETTING (ID,PWM_X,PWM_Y,LIMIT_WEIGHT_X,LIMIT_WEIGHT_Y,LIMIT_DISTANCE_X,LIMIT_DISTANCE_Y) VALUES (1,0,0,0,0,0,0);")
         conn.commit()
         conn.close()
     
-    def set_parameter_to_setting(self,pwmx,pwmy,limit_weight_x,limit_weight_y,limit_distance_x,limit_distance_y,area_test):
+    def set_parameter_to_setting(self,pwmx,pwmy,limit_weight_x,limit_weight_y,limit_distance_x,limit_distance_y):
         conn = sqlite3.connect(r'DATABASS/CT.db')
         cursor = conn.cursor()
         cursor.execute("SELECT MAX(ID) FROM SETTING;")
         highest_id = cursor.fetchone()[0]
         if highest_id:
             ids = str(highest_id+1)
-            cursor.execute("INSERT INTO SETTING (ID,PWM_X,PWM_Y,LIMIT_WEIGHT_X,LIMIT_WEIGHT_Y,LIMIT_DISTANCE_X,LIMIT_DISTANCE_Y,AREA_TEST) VALUES (?,?,?,?,?,?,?,?);",(ids,pwmx,pwmy,limit_weight_x,limit_weight_y,limit_distance_x,limit_distance_y,area_test))
+            cursor.execute("INSERT INTO SETTING (ID,PWM_X,PWM_Y,LIMIT_WEIGHT_X,LIMIT_WEIGHT_Y,LIMIT_DISTANCE_X,LIMIT_DISTANCE_Y) VALUES (?,?,?,?,?,?,?);",(ids,pwmx,pwmy,limit_weight_x,limit_weight_y,limit_distance_x,limit_distance_y))
             conn.commit()
             conn.close()
         else:
