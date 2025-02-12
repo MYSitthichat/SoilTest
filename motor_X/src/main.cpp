@@ -1,11 +1,16 @@
 #include <Arduino.h>
-
+// Motor 1
+#define DIR_PIN_1 4
+#define STEP_PIN_1 5
+#define ENABLE_PIN_1 6
 // Motor 2
 #define DIR_PIN_2 7
 #define STEP_PIN_2 9
 #define ENABLE_PIN_2 8
 // Switch
+#define SWITCH_START_1 A2
 #define SWITCH_START_2 A0
+#define SWITCH_REVERSE_1 A3
 #define SWITCH_REVERSE_2 A1
 
 bool isRunning = false;
@@ -55,88 +60,139 @@ void loop()
 
 void handleButtonPress()
 {
-    static unsigned long lastDebounceTimeStart = 0;
-    static unsigned long lastDebounceTimeReverse = 0;
-    const unsigned long debounceDelay = 50;
-    static int lastSwitchStateStart = HIGH;
-    static int lastSwitchStateReverse = HIGH;
-    static int buttonStateStart = HIGH;
-    static int buttonStateReverse = HIGH;
-    static unsigned long buttonPressTimeStart = 0;
-    static unsigned long buttonPressTimeReverse = 0;
+  static unsigned long lastDebounceTimeStart[2] = {0, 0};
+  static unsigned long lastDebounceTimeReverse[2] = {0, 0};
+  const unsigned long debounceDelay = 50;
+  static int lastSwitchStateStart[2] = {HIGH, HIGH};
+  static int lastSwitchStateReverse[2] = {HIGH, HIGH};
+  static int buttonStateStart[2] = {HIGH, HIGH};
+  static int buttonStateReverse[2] = {HIGH, HIGH};
 
-    int currentSwitchStateStart = digitalRead(SWITCH_START_2);
-    if (currentSwitchStateStart != lastSwitchStateStart)
+  for (int i = 0; i < 2; i++)
+  {
+    int switchPin = (i == 0) ? SWITCH_START_1 : SWITCH_START_2;
+    int currentSwitchState = digitalRead(switchPin);
+
+    if (currentSwitchState != lastSwitchStateStart[i])
     {
-        lastDebounceTimeStart = millis();
+      lastDebounceTimeStart[i] = millis();
     }
 
-    if ((millis() - lastDebounceTimeStart) > debounceDelay)
+    if ((millis() - lastDebounceTimeStart[i]) > debounceDelay)
     {
-        if (currentSwitchStateStart != buttonStateStart)
-        {
-            buttonStateStart = currentSwitchStateStart;
+      if (currentSwitchState != buttonStateStart[i])
+      {
+        buttonStateStart[i] = currentSwitchState;
 
-            if (buttonStateStart == LOW)
+        if (buttonStateStart[i] == LOW)
+        {
+          if (!isRunning)
+          {
+            isRunning = true;
+
+            if (i == 0)
             {
-                buttonPressTimeStart = millis();  
+              digitalWrite(ENABLE_PIN_1, LOW);
+              digitalWrite(DIR_PIN_1, direction ? HIGH : LOW);
             }
             else
             {
-                if (millis() - buttonPressTimeStart > debounceDelay) 
-                {
-                    isRunning = !isRunning;
-                    digitalWrite(ENABLE_PIN_2, isRunning ? LOW : HIGH);
-                    Serial.print("Motor ");
-                    Serial.println(isRunning ? "started" : "stopped");
-                }
+              digitalWrite(ENABLE_PIN_2, LOW);
+              digitalWrite(DIR_PIN_2, direction ? HIGH : LOW);
             }
+
+            Serial.print("Motor ");
+            Serial.print(i + 1);
+            Serial.println(" started");
+          }
         }
-    }
-    lastSwitchStateStart = currentSwitchStateStart;
-
-    int currentSwitchStateReverse = digitalRead(SWITCH_REVERSE_2);
-    if (currentSwitchStateReverse != lastSwitchStateReverse)
-    {
-        lastDebounceTimeReverse = millis();
-    }
-
-    if ((millis() - lastDebounceTimeReverse) > debounceDelay)
-    {
-        if (currentSwitchStateReverse != buttonStateReverse)
+        else
         {
-            buttonStateReverse = currentSwitchStateReverse;
+          if (isRunning)
+          {
+            isRunning = false;
 
-            if (buttonStateReverse == LOW)
+            if (i == 0)
             {
-                buttonPressTimeReverse = millis(); 
+              digitalWrite(ENABLE_PIN_1, HIGH);
             }
             else
             {
-                if (millis() - buttonPressTimeReverse > debounceDelay) 
-                {
-                    direction = !direction;
-                    digitalWrite(DIR_PIN_2, direction ? HIGH : LOW);
-                    Serial.println("Motor direction reversed");
-                }
+              digitalWrite(ENABLE_PIN_2, HIGH);
             }
+
+            Serial.print("Motor ");
+            Serial.print(i + 1);
+            Serial.println(" stopped");
+          }
         }
+      }
     }
-    lastSwitchStateReverse = currentSwitchStateReverse;
+    lastSwitchStateStart[i] = currentSwitchState;
+  }
 
-    if (buttonStateStart == LOW && millis() - buttonPressTimeStart > debounceDelay)
+  for (int i = 0; i < 2; i++)
+  {
+    int switchReversePin = (i == 0) ? SWITCH_REVERSE_1 : SWITCH_REVERSE_2;
+    int currentSwitchState = digitalRead(switchReversePin);
+
+    if (currentSwitchState != lastSwitchStateReverse[i])
     {
-        isRunning = true;
-        digitalWrite(ENABLE_PIN_2, LOW); 
-        Serial.println("Motor running...");
+      lastDebounceTimeReverse[i] = millis();
     }
 
-    if (buttonStateReverse == LOW && millis() - buttonPressTimeReverse > debounceDelay)
+    if ((millis() - lastDebounceTimeReverse[i]) > debounceDelay)
     {
-        direction = !direction;
-        digitalWrite(DIR_PIN_2, direction ? HIGH : LOW); // เปลี่ยนทิศทางมอเตอร์
-        Serial.println("Motor direction reversed");
+      if (currentSwitchState != buttonStateReverse[i])
+      {
+        buttonStateReverse[i] = currentSwitchState;
+
+        if (buttonStateReverse[i] == LOW)
+        {
+          if (!isRunning)
+          {
+            isRunning = true;
+
+            if (i == 0)
+            {
+              digitalWrite(ENABLE_PIN_1, LOW);
+              digitalWrite(DIR_PIN_1, direction ? LOW : HIGH);
+            }
+            else
+            {
+              digitalWrite(ENABLE_PIN_2, LOW);
+              digitalWrite(DIR_PIN_2, direction ? LOW : HIGH);
+            }
+
+            Serial.print("Motor ");
+            Serial.print(i + 1);
+            Serial.println(" started (reverse)");
+          }
+        }
+        else
+        {
+          if (isRunning)
+          {
+            isRunning = false;
+
+            if (i == 0)
+            {
+              digitalWrite(ENABLE_PIN_1, HIGH);
+            }
+            else
+            {
+              digitalWrite(ENABLE_PIN_2, HIGH);
+            }
+
+            Serial.print("Motor ");
+            Serial.print(i + 1);
+            Serial.println(" stopped");
+          }
+        }
+      }
     }
+    lastSwitchStateReverse[i] = currentSwitchState;
+  }
 }
 
 void controlMotor(int motorIndex, bool state, bool dir)
@@ -146,9 +202,6 @@ void controlMotor(int motorIndex, bool state, bool dir)
     digitalWrite(ENABLE_PIN_2, !state);
     digitalWrite(DIR_PIN_2, dir ? HIGH : LOW);
 
-    Serial.print("Motor ");
-    Serial.print(motorIndex + 1);
-    Serial.println(state ? " started" : " stopped");
 }
 void handleSerialCommand()
 {
@@ -168,7 +221,7 @@ void handleSerialCommand()
             return;
         lastCommand = command;
 
-        if (command.startsWith("p1"))
+        if (command.startsWith("p2"))
         {
             int speedLevel = command.substring(2).toInt();
 
@@ -196,15 +249,15 @@ void handleSerialCommand()
           controlMotor(0, true, direction);  
         }
         }
-        else if (command == "m1")
+        else if (command == "m2")
         {
             controlMotor(0, true, true);  
         }
-        else if (command == "m1r")
+        else if (command == "m2r")
         {
             controlMotor(0, true, false);  
         }
-        else if (command == "m1s")
+        else if (command == "m2s")
         {
             controlMotor(0, false, true);  
         }
