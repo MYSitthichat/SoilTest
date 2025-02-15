@@ -254,7 +254,7 @@ class MainController(QObject):
             self.zero_x_reference = float(self.dis_x) 
             self.set_zero_x_data = False
         self.dis_x = float(self.dis_x) - self.zero_x_reference
-        self.dis_x = round(float(self.dis_x),3)
+        self.dis_x = round(float(self.dis_x),4)
         self.dis_x = str(self.dis_x)
         self.main_frame.test_dis_x_lineEdit.setText(self.dis_x)
         self.main_frame.dis_set_zero_x_lineEdit.setText(self.dis_x)
@@ -262,7 +262,7 @@ class MainController(QObject):
             self.set_y_reference = float(self.dis_y)
             self.set_zero_y_data = False
         self.dis_y = float(self.dis_y) - self.set_y_reference
-        self.dis_y = round(float(self.dis_y),3)
+        self.dis_y = round(float(self.dis_y),4)
         self.dis_y = str(self.dis_y)
         self.main_frame.test_dis_y_lineEdit.setText(self.dis_y)
         self.main_frame.dis_set_zero_y_lineEdit.setText(self.dis_y)
@@ -570,10 +570,9 @@ class MainController(QObject):
         while self.mono_test:
             
             self.calculate_k_every_time.emit()
-            self.delay(0.5)
+            self.delay(1)
             self.runing_mono_test.emit(self.new_sigma_y_sum)
-            self.delay(0.5)
-            
+            self.delay(1)
             if self.monotonic_state == 1: #กดให้ได้ค่าน้ำหนักที่ต้องการ Y
                 self.main_frame.test_output_textEdit.append("move Y to weight seting")
                 self.start_monotonic_load_y_input = True
