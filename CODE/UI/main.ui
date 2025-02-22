@@ -136,7 +136,7 @@ background:rgb(255, 255, 255)
      <string notr="true"/>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="home_page">
      <property name="styleSheet">
@@ -1102,7 +1102,7 @@ background:rgb(255, 255, 255)
      <widget class="QLabel" name="test_weight_y_label">
       <property name="geometry">
        <rect>
-        <x>30</x>
+        <x>20</x>
         <y>20</y>
         <width>101</width>
         <height>51</height>
@@ -1128,7 +1128,7 @@ background:rgb(255, 255, 255)
      <widget class="QLabel" name="test_weight_x_label">
       <property name="geometry">
        <rect>
-        <x>340</x>
+        <x>750</x>
         <y>20</y>
         <width>101</width>
         <height>51</height>
@@ -1154,8 +1154,8 @@ background:rgb(255, 255, 255)
      <widget class="QLabel" name="test_dis_x_label">
       <property name="geometry">
        <rect>
-        <x>970</x>
-        <y>20</y>
+        <x>340</x>
+        <y>90</y>
         <width>161</width>
         <height>51</height>
        </rect>
@@ -1180,8 +1180,8 @@ background:rgb(255, 255, 255)
      <widget class="QLabel" name="test_dis_y_label">
       <property name="geometry">
        <rect>
-        <x>660</x>
-        <y>20</y>
+        <x>0</x>
+        <y>90</y>
         <width>131</width>
         <height>51</height>
        </rect>
@@ -1206,7 +1206,7 @@ background:rgb(255, 255, 255)
      <widget class="QLineEdit" name="test_weight_y_lineEdit">
       <property name="geometry">
        <rect>
-        <x>150</x>
+        <x>130</x>
         <y>20</y>
         <width>141</width>
         <height>51</height>
@@ -1232,7 +1232,7 @@ background:rgb(255, 255, 255)
      <widget class="QLineEdit" name="test_weight_x_lineEdit">
       <property name="geometry">
        <rect>
-        <x>470</x>
+        <x>860</x>
         <y>20</y>
         <width>141</width>
         <height>51</height>
@@ -1258,8 +1258,8 @@ background:rgb(255, 255, 255)
      <widget class="QLineEdit" name="test_dis_y_lineEdit">
       <property name="geometry">
        <rect>
-        <x>790</x>
-        <y>20</y>
+        <x>130</x>
+        <y>90</y>
         <width>141</width>
         <height>51</height>
        </rect>
@@ -1284,8 +1284,8 @@ background:rgb(255, 255, 255)
      <widget class="QLineEdit" name="test_dis_x_lineEdit">
       <property name="geometry">
        <rect>
-        <x>1130</x>
-        <y>20</y>
+        <x>510</x>
+        <y>90</y>
         <width>141</width>
         <height>51</height>
        </rect>
@@ -1312,7 +1312,7 @@ background:rgb(255, 255, 255)
        <rect>
         <x>-20</x>
         <y>75</y>
-        <width>1341</width>
+        <width>1100</width>
         <height>2</height>
        </rect>
       </property>
@@ -1326,10 +1326,10 @@ background:rgb(255, 255, 255)
      <widget class="Line" name="test_2_line">
       <property name="geometry">
        <rect>
-        <x>650</x>
+        <x>730</x>
         <y>0</y>
         <width>2</width>
-        <height>75</height>
+        <height>150</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -1343,9 +1343,9 @@ background:rgb(255, 255, 255)
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>90</y>
+        <y>150</y>
         <width>1071</width>
-        <height>611</height>
+        <height>551</height>
        </rect>
       </property>
       <property name="frameShape">
@@ -1376,7 +1376,7 @@ background:rgb(255, 255, 255)
       <property name="geometry">
        <rect>
         <x>1110</x>
-        <y>210</y>
+        <y>150</y>
         <width>161</width>
         <height>61</height>
        </rect>
@@ -1399,7 +1399,7 @@ background:rgb(255, 255, 255)
       <property name="geometry">
        <rect>
         <x>1110</x>
-        <y>300</y>
+        <y>240</y>
         <width>161</width>
         <height>61</height>
        </rect>
@@ -1422,7 +1422,7 @@ background:rgb(255, 255, 255)
       <property name="geometry">
        <rect>
         <x>1110</x>
-        <y>390</y>
+        <y>330</y>
         <width>161</width>
         <height>61</height>
        </rect>
@@ -1445,7 +1445,7 @@ background:rgb(255, 255, 255)
       <property name="geometry">
        <rect>
         <x>1110</x>
-        <y>480</y>
+        <y>420</y>
         <width>161</width>
         <height>61</height>
        </rect>
@@ -1468,7 +1468,7 @@ background:rgb(255, 255, 255)
       <property name="geometry">
        <rect>
         <x>1120</x>
-        <y>80</y>
+        <y>20</y>
         <width>131</width>
         <height>51</height>
        </rect>
@@ -1494,7 +1494,7 @@ background:rgb(255, 255, 255)
       <property name="geometry">
        <rect>
         <x>1120</x>
-        <y>130</y>
+        <y>70</y>
         <width>141</width>
         <height>51</height>
        </rect>
@@ -1662,6 +1662,269 @@ background:rgb(255, 255, 255)
        <bool>false</bool>
       </property>
      </widget>
+     <widget class="QLabel" name="test_weight_y_label_2">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>20</y>
+        <width>51</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 222)</string>
+      </property>
+      <property name="text">
+       <string>kPa</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="test_weight_y_label_3">
+      <property name="geometry">
+       <rect>
+        <x>1010</x>
+        <y>20</y>
+        <width>51</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 222)</string>
+      </property>
+      <property name="text">
+       <string>kPa</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="Line" name="test_2_line_2">
+      <property name="geometry">
+       <rect>
+        <x>330</x>
+        <y>15</y>
+        <width>2</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(0, 0, 0)</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="test_new_sigma_y_lineEdit">
+      <property name="geometry">
+       <rect>
+        <x>510</x>
+        <y>20</y>
+        <width>141</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 255)</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="test_new_sigma_y_label">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>20</y>
+        <width>161</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 222)</string>
+      </property>
+      <property name="text">
+       <string>New_sigma Y</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="test_new_sigma_y_unit_label">
+      <property name="geometry">
+       <rect>
+        <x>670</x>
+        <y>20</y>
+        <width>51</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 222)</string>
+      </property>
+      <property name="text">
+       <string>kPa</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="Line" name="test_2_line_3">
+      <property name="geometry">
+       <rect>
+        <x>1080</x>
+        <y>0</y>
+        <width>2</width>
+        <height>150</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(0, 0, 0)</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+     </widget>
+     <widget class="Line" name="test_2_line_4">
+      <property name="geometry">
+       <rect>
+        <x>330</x>
+        <y>90</y>
+        <width>2</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(0, 0, 0)</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+     </widget>
+     <widget class="QLabel" name="test_dis_y_unit_label">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>90</y>
+        <width>51</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 222)</string>
+      </property>
+      <property name="text">
+       <string>mm</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="test_dis_x_unit_label">
+      <property name="geometry">
+       <rect>
+        <x>670</x>
+        <y>90</y>
+        <width>51</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 222)</string>
+      </property>
+      <property name="text">
+       <string>mm</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <zorder>test_background_label</zorder>
+     <zorder>test_dis_y_unit_label</zorder>
+     <zorder>test_new_sigma_y_label</zorder>
+     <zorder>test_weight_y_label_3</zorder>
+     <zorder>test_weight_y_label_2</zorder>
+     <zorder>test_weight_y_label</zorder>
+     <zorder>test_weight_x_label</zorder>
+     <zorder>test_dis_x_label</zorder>
+     <zorder>test_dis_y_label</zorder>
+     <zorder>test_weight_y_lineEdit</zorder>
+     <zorder>test_weight_x_lineEdit</zorder>
+     <zorder>test_dis_y_lineEdit</zorder>
+     <zorder>test_dis_x_lineEdit</zorder>
+     <zorder>test_1line</zorder>
+     <zorder>test_2_line</zorder>
+     <zorder>grap_frame</zorder>
+     <zorder>test_start_pushButton</zorder>
+     <zorder>test_stop_pushButton</zorder>
+     <zorder>test_clear_pushButton</zorder>
+     <zorder>test_save_pushButton</zorder>
+     <zorder>test_cyclic_round_label</zorder>
+     <zorder>test_cyclic_round_lineEdit</zorder>
+     <zorder>m_up_pushButton</zorder>
+     <zorder>m_down_pushButton</zorder>
+     <zorder>m_out_pushButton</zorder>
+     <zorder>m_in_pushButton</zorder>
+     <zorder>m_stop_all_pushButton</zorder>
+     <zorder>test_2_line_2</zorder>
+     <zorder>test_new_sigma_y_lineEdit</zorder>
+     <zorder>test_new_sigma_y_unit_label</zorder>
+     <zorder>test_2_line_3</zorder>
+     <zorder>test_2_line_4</zorder>
+     <zorder>test_dis_x_unit_label</zorder>
     </widget>
     <widget class="QWidget" name="setting_page">
      <property name="styleSheet">
@@ -2517,7 +2780,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>KN</string>
+       <string>kPa</string>
       </property>
      </widget>
      <widget class="QLabel" name="st_limit_weight_y_unit_label">
@@ -2540,7 +2803,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>KN</string>
+       <string>kPa</string>
       </property>
      </widget>
      <widget class="QLabel" name="st_limit_distance_x_unit_label">
@@ -2884,7 +3147,7 @@ background:rgb(255, 255, 255)
        <rect>
         <x>400</x>
         <y>250</y>
-        <width>31</width>
+        <width>51</width>
         <height>51</height>
        </rect>
       </property>
@@ -2899,7 +3162,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>KN</string>
+       <string>kPa</string>
       </property>
      </widget>
      <widget class="QLabel" name="st_kn_y_label">
@@ -2907,7 +3170,7 @@ background:rgb(255, 255, 255)
        <rect>
         <x>400</x>
         <y>320</y>
-        <width>31</width>
+        <width>41</width>
         <height>51</height>
        </rect>
       </property>
@@ -2922,7 +3185,7 @@ background:rgb(255, 255, 255)
        <string notr="true">background:rgb(255, 255, 222)</string>
       </property>
       <property name="text">
-       <string>KN</string>
+       <string>kPa</string>
       </property>
      </widget>
      <widget class="QPushButton" name="test_k_set_pushButton">
@@ -2994,6 +3257,7 @@ background:rgb(255, 255, 255)
       </item>
      </widget>
      <zorder>st_label</zorder>
+     <zorder>st_cyclic_label</zorder>
      <zorder>st_cyclic_round_label</zorder>
      <zorder>st_rpm_x_label</zorder>
      <zorder>st_rpm_y_label</zorder>
@@ -3022,7 +3286,6 @@ background:rgb(255, 255, 255)
      <zorder>st_config_pushButton</zorder>
      <zorder>st_line_7</zorder>
      <zorder>st_cyclic_lineEdit</zorder>
-     <zorder>st_cyclic_label</zorder>
      <zorder>LX_Port_comboBox</zorder>
      <zorder>LY_Port_comboBox</zorder>
      <zorder>LDVT_Port_comboBox</zorder>

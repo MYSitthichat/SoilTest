@@ -17,6 +17,7 @@ static float displacementList2[100] = {0};
 void setup() 
 {
   Serial.begin(115200);
+  Serial.print("System online 🌟 ✅\n");
   Wire.begin();
   ADS1.begin();
   ADS1.setGain(16);
@@ -28,10 +29,6 @@ void setup()
 
 void loop() 
 {
-    ADS1.requestADC_Differential_0_1();
-    ADS2.requestADC_Differential_0_1();
-    // delay(10);
-    
     int16_t val_01 = ADS1.readADC_Differential_0_1();  
     int16_t val_02 = ADS2.readADC_Differential_0_1();
     float volts_01 = ADS1.toVoltage(val_01); 
@@ -56,4 +53,4 @@ void loop()
       sum2 = 0.0;
       count = 0;
     }
-}
+  }

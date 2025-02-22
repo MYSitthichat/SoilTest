@@ -11,6 +11,8 @@ from Controller.controller_motor_Y import ControllerMotorY
 import  time
 from threading import Thread
 import csv
+import math
+
 
 class MainController(QObject):
     show_message_info = Signal(str,str)
@@ -18,6 +20,7 @@ class MainController(QObject):
     calculate_k_every_time = Signal()
     runing_mono_test = Signal(float)
     clear_output_data_frame = Signal()
+    export_data_in_load_y_test = Signal()
     
     def __init__(self):
         super(MainController, self).__init__()
@@ -67,7 +70,7 @@ class MainController(QObject):
         self.show_message_info.connect(self.show_massege_box_info)
         self.clear_output_data_frame.connect(self.clear_data_frame)
         self.calculate_k_every_time.connect(self.calculate_k_parameter)
-        self.runing_mono_test.connect(self.run_k_mono_test)
+        # self.runing_mono_test.connect(self.run_k_mono_test)
         self.serial_consuc =False
         self.serial_ar_con = False
         self.mono_test = False
@@ -82,6 +85,8 @@ class MainController(QObject):
         self.set_zero_x_data = False
         self.test_set_zero_x = False
         
+        self.motor_control_success = False
+        
         self.set_y_reference = 0.0
         self.set_zero_y_data = False
         self.test_set_zero_y = False
@@ -92,8 +97,7 @@ class MainController(QObject):
         self.start_monotonic_k_control = False
         self.new_sigma_mono = 0.0
         self.lock_export_data = False
-        
-        
+        self.lock_export_data_y = False
         self.round_data_monotonic = 0
         
         self.start_program()
@@ -186,6 +190,11 @@ class MainController(QObject):
                 self.main_frame.con_port_pushButton.setStyleSheet(u"background:gray")
                 self.main_frame.dis_port_pushButton.setEnabled(True)
                 self.main_frame.dis_port_pushButton.setStyleSheet(u"background:rgb(252, 65, 54)")
+                self.main_frame.test_dis_x_lineEdit.setEnabled(False)
+                self.main_frame.test_dis_y_lineEdit.setEnabled(False)
+                self.main_frame.dis_set_zero_x_lineEdit.setEnabled(False)
+                self.main_frame.dis_set_zero_y_lineEdit.setEnabled(False)
+                self.main_frame.test_new_sigma_y_lineEdit.setEnabled(False)
                 self.speed_MX = self.main_frame.st_pwm_x_lineEdit.text()
                 self.speed_MY = self.main_frame.st_pwm_y_lineEdit.text()
                 self.CT_motor_X.get_setting_speed(self.speed_MY)
@@ -235,8 +244,11 @@ class MainController(QObject):
         self.loadcell_Y = load_cell_value[0]
         self.loadcell_X = float(self.loadcell_X)
         self.loadcell_Y = float(self.loadcell_Y)
-        self.loadcell_X = round(self.loadcell_X * 0.0098, 2)
-        self.loadcell_Y = round(self.loadcell_Y * 0.0098, 2)
+        self.area_test = float(self.main_frame.st_Area_lineEdit.text())
+        
+        self.loadcell_X = round((self.loadcell_X * 0.0098)/self.area_test, 3)
+        self.loadcell_Y = round((self.loadcell_Y * 0.0098)/self.area_test, 3)
+        
         self.main_frame.test_weight_y_lineEdit.setText(str(self.loadcell_Y))
         self.main_frame.test_weight_x_lineEdit.setText(str(self.loadcell_X))
         self.main_frame.r_weight_x_lineEdit.setText(str(self.loadcell_X))
@@ -245,16 +257,12 @@ class MainController(QObject):
     def update_displace_data(self,disxy_data):
         self.dis_x = disxy_data[0]
         self.dis_y = disxy_data[1]
-        self.main_frame.test_dis_x_lineEdit.setEnabled(False)
-        self.main_frame.test_dis_y_lineEdit.setEnabled(False)
-        self.main_frame.dis_set_zero_x_lineEdit.setEnabled(False)
-        self.main_frame.dis_set_zero_y_lineEdit.setEnabled(False)
         # ==================== set zero displace ====================
         if self.set_zero_x_data:
             self.zero_x_reference = float(self.dis_x) 
             self.set_zero_x_data = False
         self.dis_x = float(self.dis_x) - self.zero_x_reference
-        self.dis_x = round(float(self.dis_x),4)
+        self.dis_x = round(float(self.dis_x),3)
         self.dis_x = str(self.dis_x)
         self.main_frame.test_dis_x_lineEdit.setText(self.dis_x)
         self.main_frame.dis_set_zero_x_lineEdit.setText(self.dis_x)
@@ -262,7 +270,7 @@ class MainController(QObject):
             self.set_y_reference = float(self.dis_y)
             self.set_zero_y_data = False
         self.dis_y = float(self.dis_y) - self.set_y_reference
-        self.dis_y = round(float(self.dis_y),4)
+        self.dis_y = round(float(self.dis_y),3)
         self.dis_y = str(self.dis_y)
         self.main_frame.test_dis_y_lineEdit.setText(self.dis_y)
         self.main_frame.dis_set_zero_y_lineEdit.setText(self.dis_y)
@@ -337,7 +345,7 @@ class MainController(QObject):
         self.main_frame.st_K_lineEdit.setStyleSheet(u"background:white")
         self.main_frame.st_cyclic_lineEdit.setPlaceholderText("None")
         self.main_frame.st_weight_x_lineEdit.setPlaceholderText("None")
-        
+
     def cyclic_UI(self):
         self.main_frame.st_cyclic_lineEdit.setEnabled(True)
         self.main_frame.st_weight_x_lineEdit.setEnabled(True)
@@ -353,7 +361,7 @@ class MainController(QObject):
         self.main_frame.st_K_lineEdit.setStyleSheet(u"background:white")
         self.main_frame.st_cyclic_lineEdit.setPlaceholderText("")
         self.main_frame.st_weight_x_lineEdit.setPlaceholderText("")
-    
+
     # show page
     def show_setting(self):
         self.main_frame.show_setting_page()
@@ -371,7 +379,7 @@ class MainController(QObject):
         self.main_frame.show_home_page()
         self.main_frame.show()
     # show page
-    
+
     def start_program(self):
         self.main_frame.test_weight_x_lineEdit.setEnabled(False)
         self.main_frame.test_weight_y_lineEdit.setEnabled(False)
@@ -383,24 +391,24 @@ class MainController(QObject):
         self.main_frame.dis_port_pushButton.setStyleSheet(u"background:gray")
         self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:gray")
         self.disable_ui_parameter()
-        
+
     def clear_loadcell_data(self):
         self.main_frame.test_weight_x_lineEdit.clear()
         self.main_frame.test_weight_y_lineEdit.clear()
         self.main_frame.r_weight_x_lineEdit.clear()
         self.main_frame.r_weight_y_lineEdit.clear()
-        
+
     def clear_displace_data(self):
         self.main_frame.test_dis_x_lineEdit.clear()
         self.main_frame.test_dis_y_lineEdit.clear()
-        
-    
+
+
     # set parameter to ui frame
     def config_button_pressed(self):
         self.show_massege_box_info("CONFIG","You want to change the parameter ??")
         self.enable_ui_parameter()
 
-        
+
     def save_button_pressed(self):
         read_pwmx = self.main_frame.st_pwm_x_lineEdit.text()
         read_pwmy = self.main_frame.st_pwm_y_lineEdit.text()
@@ -416,7 +424,7 @@ class MainController(QObject):
         self.CT_motor_X.get_setting_speed(read_pwmy)
         self.delay(1)
         self.CT_motor_Y.get_setting_speed(read_pwmx)
-    
+
     def show_parameter(self):
         self.data_st = str(self.databass_controller.read_parameter_to_setting()).strip("[]").strip("()").split(",")
         self.ID_P = str(self.data_st[0])
@@ -428,7 +436,7 @@ class MainController(QObject):
         self.limit_dy = str(self.data_st[6])
         self.area_test = str(self.data_st[7])
         self.set_parameter_to_ui(self.p_pwmx,self.p_pwmy,self.limit_wx,self.limit_wy,self.limit_dx,self.limit_dy,self.area_test)
-        
+
     def set_parameter_to_ui(self,ppx,ppy,lwx,lwy,ldx,ldy,area):
         self.main_frame.st_pwm_x_lineEdit.setText(ppx)
         self.main_frame.st_pwm_y_lineEdit.setText(ppy)
@@ -444,7 +452,7 @@ class MainController(QObject):
         self.main_frame.st_limit_distance_x_lineEdit.setEnabled(False)
         self.main_frame.st_limit_distance_y_lineEdit.setEnabled(False)
         self.main_frame.st_Area_lineEdit.setEnabled(False)
-        
+
     def enable_ui_parameter(self):
         self.main_frame.st_config_pushButton.setEnabled(False)
         self.main_frame.st_save_pushButton.setEnabled(True)
@@ -464,7 +472,7 @@ class MainController(QObject):
         self.main_frame.st_limit_distance_x_lineEdit.setStyleSheet(u"background:white")
         self.main_frame.st_limit_distance_y_lineEdit.setStyleSheet(u"background:white")
         self.main_frame.st_Area_lineEdit.setStyleSheet(u"background:white")
-        
+
     def disable_ui_parameter(self):
         self.main_frame.st_config_pushButton.setEnabled(True)
         self.main_frame.st_save_pushButton.setEnabled(False)
@@ -484,7 +492,7 @@ class MainController(QObject):
         self.main_frame.st_limit_distance_x_lineEdit.setStyleSheet(u"background:gray")
         self.main_frame.st_limit_distance_y_lineEdit.setStyleSheet(u"background:gray")
         self.main_frame.st_Area_lineEdit.setStyleSheet(u"background:gray")
-        
+
     def enable_m_controll(self):
         self.main_frame.m_up_pushButton.setEnabled(True)
         self.main_frame.m_down_pushButton.setEnabled(True)
@@ -518,21 +526,21 @@ class MainController(QObject):
         msg_box.setWindowTitle(title)
         msg_box.setText(text)
         msg_box.exec()
-        
+
     def show_massege_box_error(self,title,text):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Critical)
         msg_box.setWindowTitle(title)
         msg_box.setText(text)
         msg_box.exec()
-        
+
     def show_massege_box_warning(self,title,text):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setWindowTitle(title)
         msg_box.setText(text)
         msg_box.exec()
-    
+
     # ========= START BUTTON =========
     def start_button_pressed(self):
         try:
@@ -544,7 +552,7 @@ class MainController(QObject):
             
         except Exception as e:
             self.show_massege_box_error("ERROR",f"Not Selected Test Type")
-                
+
     def stop_button_pressed(self):
         try:
             if self.monotonic_test:
@@ -553,167 +561,172 @@ class MainController(QObject):
                 pass
         except Exception as e:
             self.show_massege_box_error("ERROR",f"Not Selected Test Type")
-    
+
+
     # ============== test monotonic ====================
     
     def run_monotonic_test(self):
-        self.grap_weight_y = 0.05
-        self.monotonic_k_param = 0.0
-        self.new_sigma_y = 0.0
-        self.new_sigma_y_sum = 0.0
-        self.set_k_param_success = False
-        self.main_frame.test_k_set_pushButton.setEnabled(True)
-        self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:rgb(206, 223, 255)")
-        self.main_frame.test_output_textEdit.append("START MONOTONIC TEST")
-        self.area_test_monotonic = float(self.main_frame.st_Area_lineEdit.text())
-        
+    
         while self.mono_test:
-            
-            self.calculate_k_every_time.emit()
-            self.delay(1)
-            self.runing_mono_test.emit(self.new_sigma_y_sum)
-            self.delay(1)
-            if self.monotonic_state == 1: #กดให้ได้ค่าน้ำหนักที่ต้องการ Y
-                self.main_frame.test_output_textEdit.append("move Y to weight seting")
-                self.start_monotonic_load_y_input = True
-                self.CT_motor_Y.down_motors_y()
-                self.monotonic_state = 2                
-                
-            elif self.monotonic_state == 2: #กดให้ได้ค่าน้ำหนักที่ต้องการ X
-                if self.load_cell_y_test >= self.weight_y_recommand +- self.grap_weight_y:
-                    self.CT_motor_Y.stop_motors_y()
-                    self.lock_export_data = True
-                    self.monotonic_state = 3
-                    
-            elif self.monotonic_state == 3: 
-                self.show_message_info.emit("SET PARAMETER","โปรด SET ZERO ตำแหน่ง X และ Y และ SET K PARAMETER")
-                self.diff_dis_y = 0.0
-                self.monotonic_state = 4
-                
-            elif self.monotonic_state == 4:
-                self.start_monotonic_load_y_input = False
-                if self.set_k_param_success == True:
-                    self.lock_export_data = False
-                    self.monotonic_k_param = float(self.main_frame.st_K_lineEdit.text())
-                    self.main_frame.test_k_set_pushButton.setEnabled(False)
-                    self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:gray")
-                    time.sleep(3)
-                    self.show_test()
-                    self.monotonic_state = 5
-                else:
-                    # print("wait")
-                    pass
-            
-            elif self.monotonic_state == 5:
-                self.main_frame.test_output_textEdit.append(f"start chearacteristic test K = {self.monotonic_k_param}")
-                if self.round_data_monotonic < 5:
-                    self.new_sigma_y = 0.0
-                    self.diff_dis_y = 0.0
-                    self.old_dis_y = 0.0
-                self.delay(3)
-                self.start_monotonic_calculate_k = True
-                self.delay(1.5)
-                self.start_monotonic_k_control = True
-                self.m_in_pressed()
-                self.monotonic_state = 6
-            
-            elif self.monotonic_state == 6:
-                if self.dis_x_mono >= self.limit_distance_x:
-                    self.CT_motor_X.stop_motors_x()
-                    self.monotonic_state = 7    
-            
-            elif self.monotonic_state == 7:
-                self.show_message_info.emit("END TEST","เสร็จสิ้นการทดลองกรุณาใช้ระบบแมนนวลเพื่อถอยแกน X กลับ")
-                self.start_monotonic_k_control = False
-                self.CT_motor_Y.stop_motors_y()
-                self.monotonic_state = 8
-            
-            elif self.monotonic_state == 8:
+            self.sigma_y = self.loadcell_Y
+            if self.monotonic_state == 0:
                 pass
             
-            elif self.monotonic_state == 666:#is debug case 666  
-                self.calculte_k_start = Thread(target=self.calculate_k_parameter)
-                self.calculte_k_start.start()
+            elif self.monotonic_state == 1:
+                self.start_monotonic_calculate_k = True
+                self.lock_export_data_y = False
+                self.export_y_load_data = Thread(target=self.export_data_in_load_y_before_test)
+                self.export_y_load_data.start()
+                self.recommend_wy = float(self.main_frame.st_weight_y_lineEdit.text())
+                self.CT_motor_Y.down_motors_y()
+                self.delay(1)
+                self.monotonic_state = 2
+                
+            elif self.monotonic_state == 2:
+                if self.loadcell_Y >= self.recommend_wy +- 3:
+                    self.CT_motor_Y.stop_motors_y()
+                    self.monotonic_state = 3
             
+            elif self.monotonic_state == 3:
+                data_lines = self.main_frame.test_output_textEdit.toPlainText().split('\n')
+                sigma_y_values = []
+                for line in data_lines:
+                    if line.strip():
+                        values = line.split(',')
+                        if len(values) > 7:
+                            try:
+                                sigma_y_values.append(float(values[7].strip()))
+                            except ValueError:
+                                pass
+                if sigma_y_values:
+                    self.sigma_y_in_text_edite = max(sigma_y_values)
+                else:
+                    self.sigma_y_in_text_edite = 0.0
+                    
+                if self.sigma_y_in_text_edite >= self.recommend_wy +- 2: 
+                    self.main_frame.test_k_set_pushButton.setEnabled(True)
+                    self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:rgb(206, 223, 255)")               
+                    self.lock_export_data_y = True
+                    self.export_y_load_data.join()
+                    self.show_message_info.emit("MONOTONIC","Plese insert K Parameter")
+                    self.monotonic_state = 4
+                
+            elif self.monotonic_state == 4:
+                if self.set_k_param_success == True:
+                    self.main_frame.test_k_set_pushButton.setEnabled(False)
+                    self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:gray")
+                    self.calculate_k_every_time.emit()
+                    self.delay(1)
+                    self.show_test()
+                    self.main_frame.test_output_textEdit.append(f"Start Monotonic Test K = {self.monotonic_k_param}")
+                    self.CT_motor_X.in_motors_x()
+                    self.delay(1)
+                    print("5")
+                    self.monotonic_state = 5
+                    
+            elif self.monotonic_state == 5:
+                self.calculate_k_every_time.emit()
+                if self.sigma_y < self.new_sigma_y_sum - 0.05:
+                    self.CT_motor_Y.down_motors_y()
+                elif self.sigma_y > self.new_sigma_y_sum + 0.05:
+                    self.CT_motor_Y.up_motors_y()
+                else:
+                    self.CT_motor_Y.stop_motors_y()
+                self.delay(0.5)
+                self.monotonic_state = 6
+
+            elif self.monotonic_state == 6:
+                # self.calculate_k_every_time.emit()
+                self.monotonic_state = 5
+                self.delay(3)
+                if self.round_data_monotonic % 10 == 0:
+                    self.export_data_in_load_y_before_test()
+            # elif self.monotonic_state == 5:
+            #     self.calculate_k_every_time.emit()
+            #     if self.sigma_y < self.new_sigma_y_sum - 0.5:
+            #         self.CT_motor_Y.down_motors_y()
+            #     elif self.sigma_y > self.new_sigma_y_sum + 0.5:
+            #         self.CT_motor_Y.up_motors_y()
+            #     else:
+            #         self.CT_motor_Y.stop_motors_y()
+            #     self.delay(0.5)
+            
+            # elif self.monotonic_state == 5:
+            #     self.calculate_k_every_time.emit()
+            #     print(self.new_sigma_y_sum)
+            #     print("6")
+            #     self.monotonic_state = 6
+            
+            # elif self.monotonic_state == 6:
+            #     if self.sigma_y >= self.new_sigma_y_sum +- 0.5:
+            #         self.monotonic_state = 777   
+                    
+            #     elif self.sigma_y <= self.new_sigma_y_sum +- 0.5:
+            #         self.monotonic_state = 888
+                    
+            #     elif self.sigma_y == self.new_sigma_y_sum +- 0.5:
+            #         self.CT_motor_Y.stop_motors_y()
+            #         self.monotonic_state = 5
+            
+            
+            # elif self.monotonic_state == 777:
+            #     # self.CT_motor_Y.up_motors_y()
+            #     self.CT_motor_Y.down_motors_y() 
+            #     self.monotonic_state = 999
+                
+            # elif self.monotonic_state == 888:
+            #     # self.CT_motor_Y.down_motors_y()
+            #     self.CT_motor_Y.up_motors_y()
+            #     self.monotonic_state = 999
+                
+            # elif self.monotonic_state == 999:
+            #     if math.isclose(self.sigma_y, self.new_sigma_y_sum, rel_tol=0.05):
+            #         self.CT_motor_Y.stop_motors_y()
+            #         self.monotonic_state = 5
+            #     # if self.sigma_y >= self.new_sigma_y_sum - 0.5 and self.sigma_y <= self.new_sigma_y_sum + 0.5:
+            #     #     self.CT_motor_Y.stop_motors_y()
+            #     #     self.monotonic_state = 5
+            #     self.delay(0.5)
+            # print(self.monotonic_state)
+
+
+    def export_data_in_load_y_before_test(self):
+        while self.lock_export_data_y == False:
+            self.old_dis_y = getattr(self, 'old_dis_y', 0.0)
+            self.diff_dis_y = round(float(self.dis_y) - (self.old_dis_y),3)
+            self.new_sigma_y_sum = 0.0
+            self.round_data_monotonic += 1
+            self.sigma_y = self.loadcell_Y
+            self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            self.main_frame.test_output_textEdit.append(f"{self.timestamp} , {self.dis_y} , {self.old_dis_y} , {self.diff_dis_y} , {self.dis_x}  , {self.loadcell_Y} , {self.loadcell_X} , {self.sigma_y} , {self.new_sigma_y_sum} ,{self.round_data_monotonic}")
+            self.old_dis_y = float(self.dis_y)
+            self.delay(5)
             
 
-                
-                
-    def run_k_mono_test(self,new_sigma_mono):
-        # print(new_sigma_mono)
-        
-        if self.start_monotonic_k_control == True:
-            if new_sigma_mono >= self.sigma_y :
-                self.CT_motor_Y.down_motors_y()
-                
-            if new_sigma_mono <= self.sigma_y :
-                self.CT_motor_Y.up_motors_y()
-                
-            if new_sigma_mono == self.sigma_y:
-                self.CT_motor_Y.stop_motors_y()
-            
-            
     def calculate_k_parameter(self):
         if self.lock_export_data == False:
-            self.limit_weight_y = float(self.main_frame.st_limit_weight_y_lineEdit.text())
-            self.limit_weight_x = float(self.main_frame.st_limit_weight_x_lineEdit.text())
-            self.limit_distance_x = float(self.main_frame.st_limit_distance_x_lineEdit.text())
-            self.limit_distance_y = float(self.main_frame.st_limit_distance_y_lineEdit.text())
-            self.weight_y_recommand = float(self.main_frame.st_weight_y_lineEdit.text())
-            self.load_cell_y_test = float(self.main_frame.test_weight_y_lineEdit.text())
-            self.dis_x_mono = round(float(self.main_frame.test_dis_x_lineEdit.text()),3)
-            
-            self.sigma_y = round(self.load_cell_y_test/self.area_test_monotonic,3) ## คำนวณค่าแรงต่อพื้นที่
-            
-            print(self.monotonic_k_param,self.sigma_y,self.new_sigma_y)
-            
+            self.sigma_y = self.loadcell_Y
+            self.monotonic_k_param = float(self.main_frame.st_K_lineEdit.text())
             if self.start_monotonic_calculate_k == True:
                 self.old_dis_y = getattr(self, 'old_dis_y', 0.0)
                 self.diff_dis_y = round(float(self.dis_y) - (self.old_dis_y),3)
 
                 self.new_sigma_y = round( (self.diff_dis_y) * ( self.monotonic_k_param + self.sigma_y ) ,3)
-                
                 self.new_sigma_y_sum = round((self.sigma_y)+(self.new_sigma_y),3) 
-                
-                # print(f"new sigma {self.new_sigma_y}, old sigma {self.sigma_y}, new sigma sum {self.new_sigma_y_sum} , diff {self.diff_dis_y}")
-                
+                self.main_frame.test_new_sigma_y_lineEdit.setText(str(self.new_sigma_y_sum))
                 self.round_data_monotonic += 1
                 self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 self.main_frame.test_output_textEdit.append(f"{self.timestamp} , {self.dis_y} , {self.old_dis_y} , {self.diff_dis_y} , {self.dis_x}  , {self.loadcell_Y} , {self.loadcell_X} , {self.sigma_y} , {self.new_sigma_y_sum} ,{self.round_data_monotonic}")
                 self.old_dis_y = float(self.dis_y)
-                
-            if self.start_monotonic_load_y_input == True:
-                self.round_data_monotonic += 1
-                self.old_dis_y = getattr(self, 'old_dis_y', 0.0)
-                self.diff_dis_y = round(float(self.dis_y) - self.old_dis_y,3)
-                self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                self.main_frame.test_output_textEdit.append(f"{self.timestamp} , {self.dis_y} , {self.old_dis_y} , {self.diff_dis_y} , {self.dis_x}   , {self.loadcell_Y} , {self.loadcell_X} , {self.sigma_y} , {self.new_sigma_y_sum},{self.round_data_monotonic}")
-                self.old_dis_y = float(self.dis_y)
-            else:
-                pass
-        else:
-            self.limit_weight_y = 0.0
-            self.limit_weight_x = 0.0
-            self.limit_distance_x = 0.0
-            self.limit_distance_y = 0.0
-            self.weight_y_recommand = 0.0
-            self.load_cell_y_test = 0.0
-            self.dis_x_mono = 0.0
-            self.sigma_y = 0.0
-            self.new_sigma_y = 0.0
-            self.new_sigma_y_sum = 0.0
-            self.diff_dis_y = 0.0
-            self.old_dis_y = 0.0
-
 
     def start_monotonic_test(self):
         self.mono_test = True
         self.lock_export_data = False
-        self.monotonic_state = 1 #useing 1
+        self.monotonic_state = 1 
         self.round_data_monotonic = 0
-        # self.monotonic_state = 666 #Debug 666
-        # self.start_monotonic_calculate_k = True
-        # self.monotonic_k_param = float(self.main_frame.st_K_lineEdit.text())#deboger
+        self.CT_motor_X.get_setting_speed(self.speed_MY)
+        self.delay(1)
+        self.CT_motor_Y.get_setting_speed(self.speed_MX)
         self.monotonic_thread = Thread(target=self.run_monotonic_test)
         self.monotonic_thread.start()
 
@@ -727,10 +740,7 @@ class MainController(QObject):
         
 # ============== SAVE CLEAR ====================
     def test_save_button_pressed(self):
-        # Get the data from the text edit
         data = self.main_frame.test_output_textEdit.toPlainText()
-        
-        # Ask user for file name
         file_name, _ = QFileDialog.getSaveFileName(self.main_frame, "Save File", "", "CSV Files (*.csv);;Text Files (*.txt)")
         if file_name.endswith('.csv'):
             with open(file_name, 'w', newline='', encoding='utf-8') as csvfile:
@@ -747,6 +757,7 @@ class MainController(QObject):
         
     def test_clear_button_pressed(self):
         self.clear_data_frame()
+
 # ============== test monotonic ====================
     def delay(self,seconds):
         start_time = time.perf_counter()
@@ -755,3 +766,4 @@ class MainController(QObject):
 
     def clear_data_frame(self):
         self.main_frame.test_output_textEdit.clear()
+        self.main_frame.test_new_sigma_y_lineEdit.clear()

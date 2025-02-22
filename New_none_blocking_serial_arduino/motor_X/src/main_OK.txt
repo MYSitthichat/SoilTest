@@ -1,0 +1,138 @@
+#include <Arduino.h>
+
+bool previous_direction = true;
+
+#define DIR_PIN_2 7
+#define STEP_PIN_2 9
+#define ENABLE_PIN_2 8
+#define SWITCH_START_2 A0
+#define SWITCH_REVERSE_2 A1
+
+bool isRunning = false;
+bool direction = true;
+unsigned long lastPulseTime = 0;
+unsigned long pulseInterval = 600000; // Default to lowest speed
+bool stepState = false;
+String serialBuffer = "";
+
+void stopAllMotors();
+void handleSerialCommand();
+void handleButtonPress();
+void controlMotor(bool state, bool dir);
+
+void setup()
+{
+    pinMode(DIR_PIN_2, OUTPUT);
+    pinMode(STEP_PIN_2, OUTPUT);
+    pinMode(ENABLE_PIN_2, OUTPUT);
+    pinMode(SWITCH_START_2, INPUT_PULLUP);
+    pinMode(SWITCH_REVERSE_2, INPUT_PULLUP);
+    digitalWrite(ENABLE_PIN_2, HIGH);
+
+    Serial.begin(115200);
+    Serial.println("Setup complete");
+}
+
+void loop()
+{
+    handleSerialCommand();
+    handleButtonPress();
+    
+    if (isRunning && (micros() - lastPulseTime >= pulseInterval))
+    {
+        lastPulseTime = micros();
+        stepState = !stepState;
+        digitalWrite(STEP_PIN_2, stepState);
+    }
+}
+
+void handleSerialCommand()
+{
+    if (Serial.available())
+    {
+        char received = Serial.read();
+        if (received == '\n')
+        {
+            serialBuffer.trim();
+            if (serialBuffer == "stop all")
+            {
+                stopAllMotors();
+            }
+            else if (serialBuffer.startsWith("s,"))
+            {
+                int rpm = serialBuffer.substring(2).toInt();
+                if (rpm >= 0 && rpm <= 100)
+                {
+                    pulseInterval = rpm > 0 ? (600000 / (rpm * 200)) : 600000; // Adjusted for 0-100 RPM
+                    // Serial.print(" Motor Speed set to ");
+                    Serial.print(rpm);
+                    // Serial.println(" RPM");
+                }
+                else
+                {
+                    Serial.println("Invalid RPM (0-100)");
+                }
+            }
+            else if (serialBuffer == "r,1")
+            {
+                if (previous_direction != direction)
+                {
+                    
+                    controlMotor(false, previous_direction);
+                }
+                previous_direction = direction;
+                // Serial.println("Motor started");
+            }
+            else if (serialBuffer == "r,0")
+            {
+                controlMotor(false, direction);
+                // Serial.println("Motor stopped");
+            }
+            else if (serialBuffer == "d,1")
+            {
+                direction = true;
+                // Serial.println("Direction set to clockwise");
+            }
+            else if (serialBuffer == "d,0")
+            {
+                direction = false;
+                // Serial.println("Direction set to counterclockwise");
+            }
+            else
+            {
+                Serial.println("Invalid command");
+            }
+            serialBuffer = "";
+        }
+        else
+        {
+            serialBuffer += received;
+        }
+    }
+}
+
+void handleButtonPress()
+{
+    if (digitalRead(SWITCH_START_2) == LOW)
+    {
+        isRunning = !isRunning;
+        digitalWrite(ENABLE_PIN_2, !isRunning);
+        // Serial.println(isRunning ? "Motor started" : "Motor stopped");
+        delay(200);
+    }
+}
+
+void controlMotor(bool state, bool dir)
+{
+    isRunning = state;
+    digitalWrite(ENABLE_PIN_2, !state);
+    digitalWrite(DIR_PIN_2, dir ? HIGH : LOW);
+}
+
+void stopAllMotors()
+{
+    isRunning = false;
+    digitalWrite(ENABLE_PIN_2, HIGH);
+    digitalWrite(STEP_PIN_2, LOW);
+    // Serial.println(" All motors stopped");
+}

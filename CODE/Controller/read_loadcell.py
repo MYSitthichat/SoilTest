@@ -19,6 +19,18 @@ class Readloadcell(QThread,QObject):
             self.x_data = self.loadcell_X_serial.readline().decode('utf-8').strip()            
             load_cell_value = [self.y_data,self.x_data]
             self.load_cell_data.emit(load_cell_value)
+            
+            # if not hasattr(self, 'data_buffer'):
+            #     self.data_buffer = []
+            # self.data_buffer.append(load_cell_value)
+            # if len(self.data_buffer) > 10:
+            #     self.data_buffer.pop(0)
+            # if len(self.data_buffer) == 10:
+            #     avg_y = sum(float(data[0]) for data in self.data_buffer) / 10
+            #     avg_x = sum(float(data[1]) for data in self.data_buffer) / 10
+            #     avg_load_cell_value = [avg_y, avg_x]
+            #     self.load_cell_data.emit(avg_load_cell_value)
+            
             self.loadcell_Y_serial.flush()
             self.loadcell_X_serial.flush()
             self.loadcell_Y_serial.reset_input_buffer()

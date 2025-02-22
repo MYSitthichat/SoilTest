@@ -29,8 +29,8 @@ class ControllerLVDT(QThread,QObject):
                             self.data_buffer.pop(0)
                         avg_x = sum(x for x, y in self.data_buffer) / len(self.data_buffer)
                         avg_y = sum(y for x, y in self.data_buffer) / len(self.data_buffer)
-                        self.ar_x = round(avg_x,4)
-                        self.ar_y = round(avg_y,4)
+                        self.ar_x = round(avg_x,3)
+                        self.ar_y = round(avg_y,3)
                         # print(self.ar_x, self.ar_y)
                         self.disxy_data = [self.ar_x,self.ar_y]
                         self.displace_xy_data.emit(self.disxy_data)
