@@ -35,8 +35,8 @@ class sensorFusion():
         while True:
             self.Dy,self.Dx = lvdtReaderObj.get_data()
             
-            if type(self.Dy) != float or type(self.Dx) != float:
-                print(self.Dx, self.Dy)
+            # if type(self.Dy) != float or type(self.Dx) != float:
+                # print(self.Dx, self.Dy)
                 
             self.Fx = loadcellReaderObj_X.get_data()
             self.Fy = loadcellReaderObj_Y.get_data()
@@ -131,8 +131,9 @@ if __name__ == '__main__':
     con_to_bass = database()
     
     sensorFusion = sensorFusion(lvdtReaderObj, loadcellReaderObj_Y, loadcellReaderObj_X,computationInterval=1)
-    for i in range(100):
+    # for i in range(100):
+    while True:
         Dx, Dy, Fx, Fy, Kn = sensorFusion.get_data()
         con_to_bass.insert_data(Dx, Dy, Fx, Fy, Kn)
-        # print('Dx:', Dx, 'Dy:', Dy, 'Fx:', Fx, 'Fy:', Fy, 'Kn:', Kn)
-        time.sleep(1)
+        print('Dx:', Dx, 'Dy:', Dy, 'Fx:', Fx, 'Fy:', Fy, 'Kn:', Kn)
+        time.sleep(0.5)

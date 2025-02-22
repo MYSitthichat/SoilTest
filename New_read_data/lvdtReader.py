@@ -52,29 +52,24 @@ class lvdtReader():
                     self.yData_buffer.append(data[1])
                     
                     # check list length
-                    if len(self.xData_buffer) > 10:
+                    if len(self.xData_buffer) > 1:
                         self.xData_buffer.pop(0)
 
-                    if len(self.yData_buffer) > 10:
+                    if len(self.yData_buffer) > 1:
                         self.yData_buffer.pop(0)
             except Exception as e:
                 print(e)
                 
 
     def get_data(self):
-        if len(self.xData_buffer) >= 10:
-            # find average of last 10 readings
+        if len(self.xData_buffer) >= 1:
             xAvg = sum([float(i) for i in self.xData_buffer]) / len(self.xData_buffer)
-            # xAvg = statistics.mode(self.xData_buffer)
             xAvg = round(xAvg, 3)
         else:
             xAvg = 0
             
-        if len(self.yData_buffer) >= 10:
-            # find average of last 10 readings
+        if len(self.yData_buffer) >= 1:
             yAvg = sum([float(i) for i in self.yData_buffer]) / len(self.yData_buffer)
-            # yAvg = statistics.mode(self.yData_buffer)
-            # rounding to 4 decimal places
             yAvg = round(yAvg, 3)
         else:
             yAvg = 0
