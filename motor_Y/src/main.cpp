@@ -27,6 +27,8 @@ char button_down_state = 0xFF;
 unsigned long pulseManualInterval = 1000;
 unsigned long lastPulseManualTime = 0;
 
+int debug_mode = 0;
+
 void setup()
 {
     pinMode(DIR_PIN, OUTPUT);
@@ -35,7 +37,7 @@ void setup()
     pinMode(SWITCH_DOWN, INPUT_PULLUP);
     pinMode(ENABLE_PIN, OUTPUT);
     Serial.begin(115200);
-    Serial.println("Setup complete");
+    // Serial.println("Setup complete");
 }
 void loop()
 {
@@ -99,12 +101,18 @@ void handleSerialCommand()
                 if (rpm >= 0 && rpm <= 1000)
                 {
                     pulseInterval = rpm > 0 ? (200000 / (rpm * 9)) : 200000;
-                    Serial.println(pulseInterval);
-                    Serial.print(rpm);
+                    if(debug_mode)
+                    {
+                        Serial.print("RPM: ");
+                        Serial.println(rpm);
+                    }
                 }
                 else
                 {
-                    Serial.println("Invalid RPM (0-100)");
+                    if(debug_mode)
+                    {
+                        Serial.print("Invalid RPM (0-1000): ");
+                    }
                 }
             }
             else if (serialBuffer == "r,1")
@@ -132,9 +140,46 @@ void handleSerialCommand()
                 direction = false;
                 digitalWrite(DIR_PIN, LOW);
             }
+            else if (serialBuffer == "IU")
+            {
+                if (direction != true)
+                {
+                    stopMotorBeforeDirectionChange();
+                }
+                pulseInterval = 44;
+                isRunning = true;
+                direction = true;
+                digitalWrite(DIR_PIN, HIGH);
+                isRunning = true;
+                digitalWrite(ENABLE_PIN, LOW);
+            }
+            else if (serialBuffer == "OD")
+            {
+                if (direction != false)
+                {
+                    stopMotorBeforeDirectionChange();
+                }
+                pulseInterval = 44;
+                isRunning = true;
+                direction = false;
+                digitalWrite(DIR_PIN, LOW);
+                isRunning = true;
+                digitalWrite(ENABLE_PIN, LOW);
+            }
+            else if (serialBuffer == "e,1")
+            {
+                debug_mode = 1;
+            }
+            else if (serialBuffer == "e,0")
+            {
+                debug_mode = 0;
+            }
             else
             {
-                Serial.println("Invalid command");
+                if (debug_mode)
+                {
+                    Serial.print("Invalid command: ");
+                }
             }
             serialBuffer = "";
         }

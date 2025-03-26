@@ -25,8 +25,62 @@ class DatabassController(QObject):
     
     def check_all_table(self):
         self.check_table_setting()
-        # print("create table setting")
+        self.check_table_offset()
         
+# ======================================= tabel offset =======================================
+        
+    def check_table_offset(self):
+        print("check table offset")
+        conn = sqlite3.connect(r'DATABASS/CT.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='OFFSET';")
+        table_exists = cursor.fetchone()
+        if table_exists:
+            pass
+        else:
+            self.create_table_offset()
+        conn.close()
+    
+    def create_table_offset(self):
+        conn = sqlite3.connect(r'DATABASS/CT.db')
+        conn.execute('''CREATE TABLE OFFSET
+            (ID INT PRIMARY KEY     NOT NULL,
+            OFFSET_X                INT    NOT NULL,
+            OFFSET_Y                INT    NOT NULL);''')
+        conn.close()
+    
+    def check_record_offset(self):
+        conn = sqlite3.connect(r'DATABASS/CT.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM OFFSET")
+        record_exists = cursor.fetchone()
+        if record_exists:
+            print("record offset exists")
+        else:
+            self.insert_defualt_record_offset()
+            print("insert record offset to default")
+        conn.close()
+    
+    def insert_defualt_record_offset(self):
+        conn = sqlite3.connect(r'DATABASS/CT.db')
+        conn.execute("INSERT INTO OFFSET (ID,OFFSET_X,OFFSET_Y) VALUES (1,0,0);")
+        conn.commit()
+        conn.close()
+    
+    def read_offset_to_ui(self):
+        conn = sqlite3.connect(r'DATABASS/CT.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM OFFSET WHERE ID = (SELECT MAX(ID) FROM OFFSET);")
+        offset_record = cursor.fetchone()
+        return offset_record
+    
+    def insert_offset_to_databass(self,offset_x,offset_y):
+        conn = sqlite3.connect(r'DATABASS/CT.db')
+        conn.execute("INSERT INTO OFFSET (ID, OFFSET_X, OFFSET_Y) VALUES ((SELECT IFNULL(MAX(ID), 0) + 1 FROM OFFSET), ?, ?);", (offset_x, offset_y))
+        conn.commit()
+        conn.close()
+    
+    # ======================================= tabel setting =======================================
     def check_table_setting(self):
         conn = sqlite3.connect(r'DATABASS/CT.db')
         cursor = conn.cursor()
@@ -37,7 +91,7 @@ class DatabassController(QObject):
         else:
             self.create_table_setting()
         conn.close()
-        
+    
     def create_table_setting(self):
         conn = sqlite3.connect(r'DATABASS/CT.db')
         conn.execute('''CREATE TABLE SETTING
@@ -50,7 +104,7 @@ class DatabassController(QObject):
             LIMIT_DISTANCE_Y     INT    NOT NULL,
             AREA_TEST            INT    NOT NULL);''')
         conn.close() 
-
+        
     def check_record_setting(self):
         conn = sqlite3.connect(r'DATABASS/CT.db')
         cursor = conn.cursor()

@@ -1,17 +1,17 @@
 from PySide6.QtCore import QObject , Slot , Signal
 from view.view_main_frame import MainFrame
-from Controller.databass_controller import DatabassController
 from Controller.check_comport_controller import SerialPortChecker
-import serial as ser
-from PySide6.QtWidgets import QMessageBox ,QFileDialog
-from Controller.read_loadcell import Readloadcell
-from Controller.controller_LVDT import ControllerLVDT
-from Controller.controller_motor_X import ControllerMotorX
-from Controller.controller_motor_Y import ControllerMotorY
-import  time
+from Controller.lvdtReader import lvdtReader
+from Controller.loadcellReader import loadcellReader
+from Controller.motorController import motorController
+from Controller.databass_controller import DatabassController
+from PySide6.QtWidgets import QMessageBox,QFileDialog
+import time
+from simple_pid import PID
 from threading import Thread
 import csv
-import math
+
+
 
 
 class MainController(QObject):
@@ -20,96 +20,248 @@ class MainController(QObject):
     calculate_k_every_time = Signal()
     runing_mono_test = Signal(float)
     clear_output_data_frame = Signal()
-    export_data_in_load_y_test = Signal()
     
     def __init__(self):
         super(MainController, self).__init__()
         self.main_frame = MainFrame()
         self.check_port_controller = SerialPortChecker()
+        self.loadcell_con_Y = loadcellReader()
+        self.loadcell_con_X = loadcellReader()
+        self.lvdt_con = lvdtReader()
+        self.motor_con_x = motorController()
+        self.motor_con_y = motorController()
         self.databass_controller = DatabassController()
-        self.loadcell_data = Readloadcell()
-        self.CT_LVDT = ControllerLVDT()
-        self.CT_motor_X = ControllerMotorX()
-        
-        self.CT_motor_Y = ControllerMotorY()
-        
-        self.check_port_controller.start()
-        self.loadcell_data.connect_serial_XY_signal.connect(self.connect_serial_XY)
-        self.CT_LVDT.connect_serial_arduino_signal.connect(self.connect_serial_arduino)
-        self.CT_motor_X.connect_serial_motor_x_signal.connect(self.connect_serial_motor_x)
-        self.CT_motor_Y.connect_serial_motor_y_signal.connect(self.connect_serial_motor_y)
-        self.check_port_controller.ports_updated.connect(self.port_updated)
-        self.main_frame.home_pushButton.clicked.connect(self.Show_main)
-        self.main_frame.calibrate_pushButton.clicked.connect(self.show_calibate)
-        self.main_frame.test_pushButton.clicked.connect(self.show_test)
-        self.main_frame.setting_pushButton.clicked.connect(self.show_setting)
-        self.main_frame.con_port_pushButton.clicked.connect(self.con_port_pressed)
-        self.main_frame.dis_port_pushButton.clicked.connect(self.discon_port_pressed)
-        self.main_frame.st_config_pushButton.clicked.connect(self.config_button_pressed)
-        self.main_frame.st_save_pushButton.clicked.connect(self.save_button_pressed)
-        self.main_frame.cl_set_zero_pushButton.clicked.connect(self.set_zero_button_pressed)
-        self.main_frame.cl_calibrate_pushButton.clicked.connect(self.calibrate_button_pressed)
-        self.main_frame.test_start_pushButton.clicked.connect(self.start_button_pressed)
-        self.main_frame.test_stop_pushButton.clicked.connect(self.stop_button_pressed)
-        self.main_frame.test_clear_pushButton.clicked.connect(self.test_clear_button_pressed)
-        self.main_frame.test_save_pushButton.clicked.connect(self.test_save_button_pressed)
-        self.main_frame.test_monotonic_radioButton.clicked.connect(self.monotonic_selected)
-        self.main_frame.test_cyclic_radioButton.clicked.connect(self.cyclic_selected)
         self.databass_controller.create_databass()
         self.databass_controller.check_record_setting()
-        self.loadcell_data.load_cell_data.connect(self.update_loadcell_data)
-        self.CT_LVDT.displace_xy_data.connect(self.update_displace_data)
-        self.main_frame.m_up_pushButton.clicked.connect(self.m_up_pressed)
-        self.main_frame.m_down_pushButton.clicked.connect(self.m_down_pressed)
-        self.main_frame.m_in_pushButton.clicked.connect(self.m_out_pressed)
-        self.main_frame.m_out_pushButton.clicked.connect(self.m_in_pressed)
-        self.main_frame.m_stop_all_pushButton.clicked.connect(self.stop_all_motors)
-        self.main_frame.dis_x_set_zero_pushButton.clicked.connect(self.set_zero_displace_x)
-        self.main_frame.dis_y_set_zero_pushButton.clicked.connect(self.set_zero_displace_y)
-        self.main_frame.test_k_set_pushButton.clicked.connect(self.set_k_parameter_pressed)
-        self.show_message_info.connect(self.show_massege_box_info)
-        self.clear_output_data_frame.connect(self.clear_data_frame)
-        self.calculate_k_every_time.connect(self.calculate_k_parameter)
-        # self.runing_mono_test.connect(self.run_k_mono_test)
-        self.serial_consuc =False
-        self.serial_ar_con = False
-        self.mono_test = False
-        self.serial_motor_x_con = False
-        self.serial_motor_y_con = False
-        self.monotonic_state = 0
-        self.loadcell_X = 0.0
-        self.loadcell_Y = 0.0
-        self.dis_x = 0.0
-        self.dis_y = 0.0
-        self.zero_x_reference = 0.0
-        self.set_zero_x_data = False
-        self.test_set_zero_x = False
-        
-        self.motor_control_success = False
-        
-        self.set_y_reference = 0.0
-        self.set_zero_y_data = False
-        self.test_set_zero_y = False
-        
-        self.set_k_param_success = False
-        self.start_monotonic_calculate_k = False
-        self.start_monotonic_load_y_input = False
-        self.start_monotonic_k_control = False
-        self.new_sigma_mono = 0.0
-        self.lock_export_data = False
-        self.lock_export_data_y = False
-        self.round_data_monotonic = 0
-        
-        self.start_program()
+        self.databass_controller.check_record_offset()
         self.show_parameter()
+        self.main_frame.disable_manual_control()
+        self.check_port_controller.start()
+        self.main_frame.test_manual_control_checkBox.stateChanged.connect(self.check_manual_control)
+        self.main_frame.set_offset_pushButton.clicked.connect(self.set_offset_pressed)
+        self.main_frame.save_offset_pushButton.clicked.connect(self.save_offset_pressed)
+        self.check_port_controller.ports_updated.connect(self.port_updated)
+        self.main_frame.con_port_pushButton.clicked.connect(self.con_port_pressed)
+        self.main_frame.test_pushButton.clicked.connect(self.show_test)
+        self.main_frame.setting_pushButton.clicked.connect(self.show_setting)
+        self.main_frame.calibrate_pushButton.clicked.connect(self.show_calibate)
+        self.main_frame.home_pushButton.clicked.connect(self.Show_main)
+        self.main_frame.dis_port_pushButton.clicked.connect(self.disconnect_port)
+        self.show_message_info.connect(self.show_massege_box_info)
+        self.main_frame.st_config_pushButton.clicked.connect(self.config_button_pressed)
+        self.main_frame.st_save_pushButton.clicked.connect(self.save_button_pressed)
+        self.main_frame.test_start_pushButton.clicked.connect(self.start_test)
+        self.main_frame.test_stop_pushButton.clicked.connect(self.stop_test)
+        self.main_frame.test_clear_pushButton.clicked.connect(self.clear_test)
+        self.main_frame.test_save_pushButton.clicked.connect(self.save_test)
+        self.main_frame.test_k_set_pushButton.clicked.connect(self.k_button_pressed)
+        self.main_frame.m_in_pushButton.clicked.connect(self.motor_x_out)
+        self.main_frame.m_out_pushButton.clicked.connect(self.motor_x_in)
+        self.main_frame.m_up_pushButton.clicked.connect(self.motor_y_up)
+        self.main_frame.m_down_pushButton.clicked.connect(self.motor_y_down)
+        self.main_frame.m_stop_all_pushButton.clicked.connect(self.stop_motor_all)
         
+        
+        self.computationInterval = 1 # ความถี่ในการคำนวณ
+        self.start_collect_data = False
+        self.Dx = 0
+        self.offset_dx = 0.0
+        self.Dy = 0
+        self.offset_dy = 0.0
+        self.previous_Dy = 0
+        self.Fx = 0
+        self.Fy = 0
+        self.previous_Fy = 0
+        self.Fy_target = 0
+        self.Kn = 0
+        self.K_target = 0
+        
+        self.lock_data_referanec = False
+        self.referance_Dy = 0.0
+        self.referance_Dx = 0.0
+        
+        # ตั้งค่า PID (ค่าที่ต้องปรับจูน)
+        self.pid = PID(Kp=4.0, Ki=0.5, Kd=0.1, setpoint=0)
+        self.pid.output_limits = (-1000, 1000)  # จำกัดค่าความเร็วระหว่าง -90 ถึง 90
+        
+        # k button pressed =================================================================================================
+        self.status_k_button = False
+        # k button pressed =================================================================================================
+        
+        # monotonic test =================================================================================================
+        self.start_loop_mono_test = False
+        self.loop_mono_state = 0
+        self.lock_export_data = True
+        # monotonic test =================================================================================================
+        self.start_up_programe()
+
     @Slot()
     @Slot(str)
     
+    def set_offset_pressed(self):
+        self.main_frame.dis_set_offset_x_lineEdit.setEnabled(True)
+        self.main_frame.dis_set_offset_y_lineEdit.setEnabled(True)
+        self.main_frame.save_offset_pushButton.setEnabled(True)
+        self.main_frame.set_offset_pushButton.setEnabled(False)
+        self.main_frame.save_offset_pushButton.setStyleSheet("background:rgb(255, 128, 130)")
+        self.main_frame.set_offset_pushButton.setStyleSheet("background:gray")
+        self.show_massege_box_info("SET OFFSET","You want to set offset ??")
+        
+    def save_offset_pressed(self):
+        self.offset_dx_get = self.main_frame.dis_set_offset_x_lineEdit.text()
+        self.offset_dy_get = self.main_frame.dis_set_offset_y_lineEdit.text()
+        self.databass_controller.insert_offset_to_databass(self.offset_dx_get,self.offset_dy_get)
+        self.main_frame.dis_set_offset_x_lineEdit.setEnabled(False)
+        self.main_frame.dis_set_offset_y_lineEdit.setEnabled(False)
+        self.main_frame.save_offset_pushButton.setEnabled(False)
+        self.main_frame.set_offset_pushButton.setEnabled(True)
+        self.main_frame.save_offset_pushButton.setStyleSheet("background:gray")
+        self.main_frame.set_offset_pushButton.setStyleSheet("background:rgb(187, 255, 144)")
+        self.show_massege_box_info("SAVE OFFSET","You want to save offset ??")
     
-    def set_k_parameter_pressed(self):
-        self.set_k_param_success = True
+    def check_manual_control(self):
+        try:
+            if self.main_frame.test_manual_control_checkBox.isChecked():
+                self.motor_con_x.set_speed(1000)
+                self.motor_con_y.set_speed(1000)
+                self.main_frame.enable_manual_control()
+            else:
+                self.motor_con_x.set_speed(200)
+                self.motor_con_y.set_speed(200)
+                self.main_frame.disable_manual_control()
+        except Exception as e:
+            print(e)
     
+    def motor_x_in(self):
+        self.motor_con_x.in_and_up()
+        
+    def motor_x_out(self):
+        self.motor_con_x.out_and_down()
+    
+    def motor_y_up(self):
+        self.motor_con_y.in_and_up()
+        
+    def motor_y_down(self):
+        self.motor_con_y.out_and_down()
+    
+    def stop_motor_all(self):
+        self.motor_con_y.stop_motor()
+        self.motor_con_x.stop_motor()
+    
+    def start_test(self):
+        self.start_thread_mono = Thread(target=self.run_mono_test, args=())
+        self.start_thread_mono.start()
+        self.start_loop_mono_test = True
+        self.loop_mono_state = 1
+    
+    def stop_test(self):
+        self.start_loop_mono_test = False
+        self.status_k_button = False
+        self.lock_export_data = True
+        self.start_thread_mono.join()
+        self.loop_mono_state = 0
+        self.main_frame.test_k_set_pushButton.setEnabled(True)
+        self.main_frame.test_k_set_pushButton.setStyleSheet("background:rgb(206, 223, 255)")
+    
+    def clear_test(self):
+        self.main_frame.test_output_textEdit.clear()
+    
+    def save_test(self):
+        # Get the data from the text edit
+        data = self.main_frame.test_output_textEdit.toPlainText()
+        
+        # Ask user for file name
+        file_name, _ = QFileDialog.getSaveFileName(self.main_frame, "Save File", "", "CSV Files (*.csv);;Text Files (*.txt)")
+        if file_name.endswith('.csv'):
+            with open(file_name, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(["time", "Dis X(Dx)","Dis Y(Dv)","loadcell X (kPa)", "loadcell Y (kPa)", "K (kPa)", "Fy target (kPa)"])
+                for line in data.split('\n'):
+                    writer.writerow(line.split(','))
+        elif file_name.endswith('.txt'):
+            with open(file_name, 'w', encoding='utf-8') as txtfile:
+                txtfile.write(data)
+            self.show_message_info.emit("SAVE", f"Data saved to {file_name}")
+        else:
+            self.show_message_info.emit("SAVE", "Save operation cancelled")
+    
+    def k_button_pressed(self):
+        self.status_k_button = True
+        self.K_target = float(self.main_frame.st_K_lineEdit.text())
+        self.main_frame.test_k_set_pushButton.setEnabled(False)
+        self.main_frame.test_k_set_pushButton.setStyleSheet("background-color:gray;")
+    
+    def run_mono_test(self):
+        self.recommand_Dx = float(self.main_frame.st_limit_distance_x_lineEdit.text())
+        while self.start_loop_mono_test:
+            if (self.loop_mono_state == 0):
+                pass
+            
+            elif (self.loop_mono_state == 1):
+                self.show_message_info.emit("Mono Test","Start Mono Test")
+                self.recommand_weigh_Fy = float(self.main_frame.st_weight_y_lineEdit.text())
+                self.motor_con_y.set_speed(200)
+                self.delay(0.1)
+                self.motor_con_y.set_direction(0)
+                self.delay(0.1)
+                self.motor_con_y.start_motor()
+                self.delay(0.1)
+                self.lock_export_data = False
+                self.loop_mono_state = 2
+                
+            elif (self.loop_mono_state == 2):
+                if (self.Fy >= self.recommand_weigh_Fy):
+                    self.lock_export_data = True
+                    self.motor_con_y.stop_motor()
+                    self.show_message_info.emit("Mono Test","Fy set success")
+                    self.delay(2)
+                    self.show_setting()
+                    self.loop_mono_state = 3
+
+            elif (self.loop_mono_state == 3):
+                if self.status_k_button == True:
+                    self.show_message_info.emit("Mono Test","K set success")
+                    self.delay(1.5)
+                    self.show_test()
+                    self.lock_export_data = False
+                    self.loop_mono_state = 4
+            
+            elif (self.loop_mono_state == 4):
+                # print("start slide test")
+                self.motor_con_x.set_speed(90)
+                self.delay(0.1)
+                self.motor_con_x.set_direction(1)
+                self.delay(0.1)
+                self.motor_con_x.start_motor()
+                self.delay(0.1)
+                self.main_frame.test_output_textEdit.append("start slide test")
+                self.loop_mono_state = 5
+                
+            elif (self.loop_mono_state == 5):
+                self.control_motor_Y()
+                # print("move x to recommand")
+                if (self.Dx >= self.recommand_Dx):
+                    self.motor_con_x.stop_motor()
+                    self.delay(1)
+                    self.show_message_info.emit("Mono Test","Dx move to recommand success")
+                    self.loop_mono_state = 6
+
+            elif (self.loop_mono_state == 6):
+                self.control_motor_Y()
+                # print("wait for stop and revest motor x")
+                
+            self.export_data_to_dash_bord()
+            time.sleep(1)
+
+    def export_data_to_dash_bord(self):
+        Dx, Dy, Fx, Fy, Kn, Fy_target = self.get_data()
+        E_Dx = Dx;E_Dy = Dy;E_Fx = Fx;E_Fy = Fy;E_Kn = Kn;E_Fy_target = Fy_target
+        if self.lock_export_data == True:
+            pass
+        else:
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            self.main_frame.test_output_textEdit.append(f"{timestamp},{E_Dx},{E_Dy},{E_Fx},{E_Fy},{E_Kn},{E_Fy_target}")
+
     def port_updated(self, ports):
         if len(ports) == 0:
             print("No port found")
@@ -147,284 +299,154 @@ class MainController(QObject):
                 self.main_frame.motor_Port_y_comboBox.addItem(port.device)
 
     def con_port_pressed(self):
-        self.loadcell_Y_comport = self.main_frame.LY_Port_comboBox.currentText()
-        self.loadcell_X_comport = self.main_frame.LX_Port_comboBox.currentText()
-        self.LVDT_comport = self.main_frame.LDVT_Port_comboBox.currentText()
-        self.motor_comport_x = self.main_frame.motor_Port_x_comboBox.currentText()
-        self.motor_comport_y = self.main_frame.motor_Port_y_comboBox.currentText()
+        self.ly_port = self.main_frame.LY_Port_comboBox.currentText()
+        self.lx_port = self.main_frame.LX_Port_comboBox.currentText()
+        self.LVDT_port = self.main_frame.LDVT_Port_comboBox.currentText()
+        self.mx_port = self.main_frame.motor_Port_x_comboBox.currentText()
+        self.my_port = self.main_frame.motor_Port_y_comboBox.currentText()
         
+        self.baudrate = 115200
+        self.loadcell_con_Y.connect(self.ly_port, self.baudrate)
+        self.loadcell_con_X.connect(self.lx_port, self.baudrate)
+        self.lvdt_con.connect(self.LVDT_port, self.baudrate)
+        self.motor_con_x.connect(self.mx_port, self.baudrate)
+        self.motor_con_y.connect(self.my_port, self.baudrate)
+        
+        if (self.loadcell_con_Y.check_connection() & self.loadcell_con_X.check_connection() & self.lvdt_con.check_connection() & self.motor_con_x.check_connection() & self.motor_con_y.check_connection()) == True:
+            self.show_message_info.emit("Connection","Connected to all devices")
+            self.main_frame.con_to_port()
+            self.motor_con_x.set_speed(200)
+            self.motor_con_y.set_speed(200)
+            self.start_collect_data = True
+            self.sensorThread = Thread(target=self.collect_data, args=())
+            self.sensorThread.start()
+            
+        self.main_frame.test_weight_y_lineEdit.setEnabled(False)
+        self.main_frame.test_weight_x_lineEdit.setEnabled(False)
+        self.main_frame.test_dis_y_lineEdit.setEnabled(False)
+        self.main_frame.test_dis_x_lineEdit.setEnabled(False)
         self.speed_MX = self.main_frame.st_pwm_x_lineEdit.text()
         self.speed_MY = self.main_frame.st_pwm_y_lineEdit.text()
-        
-        self.loadcell_data.get_comport(self.loadcell_Y_comport,self.loadcell_X_comport)
-        self.LVDT_comport = self.CT_LVDT.get_comport(self.LVDT_comport)
-        self.motor_comport_x = self.CT_motor_X.get_comport(self.motor_comport_x)
-        self.motor_comport_y = self.CT_motor_Y.get_comport(self.motor_comport_y)
-        
-        self.loadcell_data.running = True
-        self.loadcell_data.start()
-        self.CT_LVDT.running = True
-        self.CT_LVDT.start()
-        self.CT_motor_X.running = True
-        self.CT_motor_X.start()
-        
-        try:
-            if self.serial_consuc == True & self.serial_ar_con == True & self.serial_motor_x_con == True & self.serial_motor_y_con == True:
-                msg_box = QMessageBox()
-                msg_box.setIcon(QMessageBox.Information)
-                msg_box.setWindowTitle("COMPORT CON")
-                msg_box.setText(f"CONNECTED \n L1 to{self.loadcell_Y_comport} \n L2 to{self.loadcell_X_comport} \nLVDT to{self.LVDT_comport} \nMotor X to{self.motor_comport_x} \nMotor Y to{self.motor_comport_y}")
-                msg_box.exec()
-                self.enable_m_controll()
-                self.main_frame.LY_Port_comboBox.setEnabled(False)
-                self.main_frame.LY_Port_comboBox.setStyleSheet(u"background:gray")
-                self.main_frame.LX_Port_comboBox.setEnabled(False)
-                self.main_frame.LX_Port_comboBox.setStyleSheet(u"background:gray")
-                self.main_frame.LDVT_Port_comboBox.setEnabled(False)
-                self.main_frame.LDVT_Port_comboBox.setStyleSheet(u"background:gray")
-                self.main_frame.motor_Port_x_comboBox.setEnabled(False)
-                self.main_frame.motor_Port_x_comboBox.setStyleSheet(u"background:gray")
-                self.main_frame.motor_Port_y_comboBox.setEnabled(False)
-                self.main_frame.motor_Port_y_comboBox.setStyleSheet(u"background:gray")
-                self.main_frame.con_port_pushButton.setEnabled(False)
-                self.main_frame.con_port_pushButton.setStyleSheet(u"background:gray")
-                self.main_frame.dis_port_pushButton.setEnabled(True)
-                self.main_frame.dis_port_pushButton.setStyleSheet(u"background:rgb(252, 65, 54)")
-                self.main_frame.test_dis_x_lineEdit.setEnabled(False)
-                self.main_frame.test_dis_y_lineEdit.setEnabled(False)
-                self.main_frame.dis_set_zero_x_lineEdit.setEnabled(False)
-                self.main_frame.dis_set_zero_y_lineEdit.setEnabled(False)
-                self.main_frame.test_new_sigma_y_lineEdit.setEnabled(False)
-                self.speed_MX = self.main_frame.st_pwm_x_lineEdit.text()
-                self.speed_MY = self.main_frame.st_pwm_y_lineEdit.text()
-                self.CT_motor_X.get_setting_speed(self.speed_MY)
-                self.delay(1)
-                self.CT_motor_Y.get_setting_speed(self.speed_MX)
-        except ser.SerialException as e:
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Critical)
-            msg_box.setWindowTitle("COMPORT CON ERROR")
-            msg_box.setText(f"Failed to connect to {e} \n please check the comport")
-            msg_box.exec()
-        
-    def discon_port_pressed(self):
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Information)
-        msg_box.setWindowTitle("Dis Connected")
-        msg_box.setText(f"DIS CONNECTED \n L1 to{self.loadcell_Y_comport} \n L2 to{self.loadcell_X_comport} \nLVDT to{self.LVDT_comport} \nMotor to{self.motor_comport_x} \nMotor to{self.motor_comport_y}")
-        msg_box.exec()
-        self.main_frame.LY_Port_comboBox.setEnabled(True)
-        self.main_frame.LY_Port_comboBox.setStyleSheet(u"background:white")
-        self.main_frame.LX_Port_comboBox.setEnabled(True)
-        self.main_frame.LX_Port_comboBox.setStyleSheet(u"background:white")
-        self.main_frame.LDVT_Port_comboBox.setEnabled(True)
-        self.main_frame.LDVT_Port_comboBox.setStyleSheet(u"background:white")
-        self.main_frame.motor_Port_x_comboBox.setEnabled(True)
-        self.main_frame.motor_Port_x_comboBox.setStyleSheet(u"background:white")
-        self.main_frame.motor_Port_y_comboBox.setEnabled(True)
-        self.main_frame.motor_Port_y_comboBox.setStyleSheet(u"background:white")
-        
-        self.serial_consuc = False
-        self.serial_ar_con = False
-        self.serial_motor_x_con = False
-        self.serial_motor_y_con = False
-        self.loadcell_data.stop()
-        self.CT_LVDT.stop()
-        self.CT_motor_X.stop()
-        self.main_frame.con_port_pushButton.setEnabled(True)
-        self.main_frame.con_port_pushButton.setStyleSheet(u"background:rgb(170, 255, 0)")
-        self.clear_loadcell_data()
-        self.clear_displace_data()
-        self.main_frame.dis_port_pushButton.setEnabled(False)
-        self.main_frame.dis_port_pushButton.setStyleSheet(u"background:gray")
-        self.disable_ui_parameter()
-    
-    def update_loadcell_data(self,load_cell_value):
-        self.loadcell_X = load_cell_value[1]
-        self.loadcell_Y = load_cell_value[0]
-        self.loadcell_X = float(self.loadcell_X)
-        self.loadcell_Y = float(self.loadcell_Y)
-        self.area_test = float(self.main_frame.st_Area_lineEdit.text())
-        
-        self.loadcell_X = round((self.loadcell_X * 0.0098)/self.area_test, 3)
-        self.loadcell_Y = round((self.loadcell_Y * 0.0098)/self.area_test, 3)
-        
-        self.main_frame.test_weight_y_lineEdit.setText(str(self.loadcell_Y))
-        self.main_frame.test_weight_x_lineEdit.setText(str(self.loadcell_X))
-        self.main_frame.r_weight_x_lineEdit.setText(str(self.loadcell_X))
-        self.main_frame.r_weight_y_lineEdit.setText(str(self.loadcell_Y))
-    
-    def update_displace_data(self,disxy_data):
-        self.dis_x = disxy_data[0]
-        self.dis_y = disxy_data[1]
-        # ==================== set zero displace ====================
-        if self.set_zero_x_data:
-            self.zero_x_reference = float(self.dis_x) 
-            self.set_zero_x_data = False
-        self.dis_x = float(self.dis_x) - self.zero_x_reference
-        self.dis_x = round(float(self.dis_x),3)
-        self.dis_x = str(self.dis_x)
-        self.main_frame.test_dis_x_lineEdit.setText(self.dis_x)
-        self.main_frame.dis_set_zero_x_lineEdit.setText(self.dis_x)
-        if self.set_zero_y_data:
-            self.set_y_reference = float(self.dis_y)
-            self.set_zero_y_data = False
-        self.dis_y = float(self.dis_y) - self.set_y_reference
-        self.dis_y = round(float(self.dis_y),3)
-        self.dis_y = str(self.dis_y)
-        self.main_frame.test_dis_y_lineEdit.setText(self.dis_y)
-        self.main_frame.dis_set_zero_y_lineEdit.setText(self.dis_y)
-        # ==================== set zero displace ====================
-        
-    def set_zero_displace_x(self):
-        self.set_zero_x_data = True
-        self.test_set_zero_x = True
 
-    def set_zero_displace_y(self):
-        self.set_zero_y_data = True  
-        self.test_set_zero_y = True
-    
-    def monotonic_selected(self):
-        self.monotonic_UI()
-        self.monotonic_test = True
-        self.cyclic_test = False
-        
-    def cyclic_selected(self):
-        self.cyclic_UI()
-        self.cyclic_test = True
-        self.monotonic_test = False
-    
-    def m_up_pressed(self):
-        self.CT_motor_Y.up_motors_y()
-        
-    def m_down_pressed(self):
-        self.CT_motor_Y.down_motors_y()
-    
-    def m_in_pressed(self):
-        self.CT_motor_X.in_motors_x()
-        
-    def m_out_pressed(self):
-        self.CT_motor_X.out_motors_x()
-        
-    def stop_all_motors(self):
-        self.CT_motor_Y.stop_motors_y()
-        self.delay(0.5)
-        self.CT_motor_X.stop_motors_x()
-        
-    def connect_serial_XY(self):
-        self.serial_consuc = True
-    
-    def connect_serial_arduino(self):
-        self.serial_ar_con = True
-        
-    def connect_serial_motor_x(self):
-        self.serial_motor_x_con = True
-        
-    def connect_serial_motor_y(self):
-        self.serial_motor_y_con = True
-        
-        
-    def set_zero_button_pressed(self):
-        print("Set Zero Clicked")
-        
-    def calibrate_button_pressed(self):
-        print("Calibrate Clicked")
+    def disconnect_port(self):
+        self.loadcell_con_Y.disconnect()
+        self.loadcell_con_X.disconnect()
+        self.lvdt_con.disconnect()
+        self.motor_con_x.disconnect()
+        self.motor_con_y.disconnect()
+        self.start_collect_data = False
+        self.K_target = 0
+        self.main_frame.dis_con_to_port()
+        if self.sensorThread.is_alive():
+            self.sensorThread.join()
+        self.show_message_info.emit("Connection","Disconnected to all devices")
 
-    def monotonic_UI(self):
-        self.main_frame.st_cyclic_lineEdit.setEnabled(False)
-        self.main_frame.st_weight_x_lineEdit.setEnabled(False)
-        self.main_frame.st_weight_y_lineEdit.setEnabled(True)
-        self.main_frame.st_K_lineEdit.setEnabled(True)
-        self.main_frame.st_cyclic_lineEdit.clear()
-        self.main_frame.st_weight_x_lineEdit.clear()
-        self.main_frame.st_weight_y_lineEdit.clear()
-        self.main_frame.st_K_lineEdit.clear()
-        self.main_frame.st_cyclic_lineEdit.setStyleSheet(u"background:gray")
-        self.main_frame.st_weight_x_lineEdit.setStyleSheet(u"background:gray")
-        self.main_frame.st_weight_y_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_K_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_cyclic_lineEdit.setPlaceholderText("None")
-        self.main_frame.st_weight_x_lineEdit.setPlaceholderText("None")
+    def collect_data(self):
+        while self.start_collect_data == True:
+            try:
+                area = float(self.main_frame.st_Area_lineEdit.text())
+                self.Dy, self.Dx = self.lvdt_con.get_data()
+                self.Fx = self.loadcell_con_X.get_data()
+                self.Fy = self.loadcell_con_Y.get_data()
+                self.Dy = float(self.Dy-self.offset_dy)
+                self.Dy = round(self.Dy, 4)
+                self.Dx = float(self.Dx-self.offset_dx)
+                self.Dx = round(self.Dx, 4)
+                if not self.lock_data_referanec and self.Dx != 0 and self.Dy != 0:
+                    self.referance_Dy = self.Dy
+                    self.referance_Dx = self.Dx
+                    self.lock_data_referanec = True
 
-    def cyclic_UI(self):
-        self.main_frame.st_cyclic_lineEdit.setEnabled(True)
-        self.main_frame.st_weight_x_lineEdit.setEnabled(True)
-        self.main_frame.st_weight_y_lineEdit.setEnabled(True)
-        self.main_frame.st_K_lineEdit.setEnabled(True)
-        self.main_frame.st_cyclic_lineEdit.clear()
-        self.main_frame.st_weight_x_lineEdit.clear()
-        self.main_frame.st_weight_y_lineEdit.clear()
-        self.main_frame.st_K_lineEdit.clear()
-        self.main_frame.st_cyclic_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_weight_x_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_weight_y_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_K_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_cyclic_lineEdit.setPlaceholderText("")
-        self.main_frame.st_weight_x_lineEdit.setPlaceholderText("")
+                self.Dy -= self.referance_Dy
+                self.Dy = round(self.Dy, 4)
+                self.Dx -= self.referance_Dx
+                self.Dx = round(self.Dx, 4)
 
-    # show page
+                self.Fy = round(float(self.Fy) * 0.0098 / area, 4)
+                self.Fx = round(float(self.Fx) * 0.0098 / area, 4)
+                
+                self.inseart_data_to_ui(self.Dx,self.Dy,self.Fx,self.Fy)
+
+                self.Kn = round((self.Fy - self.previous_Fy) / (self.Dy - self.previous_Dy), 4) if (self.Dy - self.previous_Dy) != 0 else 0
+                self.Fy_target = round((self.Dy - self.previous_Dy) * self.K_target + self.previous_Fy, 4)
+
+            except ZeroDivisionError:
+                pass
+        
+            self.previous_Dy = self.Dy
+            self.previous_Fy = self.Fy
+            
+            time.sleep(self.computationInterval)
+    
+    def get_data(self):
+        return self.Dx, self.Dy, self.Fx, self.Fy, self.Kn, self.Fy_target
+    
+    def control_motor_Y(self):
+        error = self.Fy_target - self.Fy
+        speed_adjustment = self.pid(error)
+        speed_adjustment = round(speed_adjustment, 4)
+
+        if speed_adjustment > 0:
+            self.motor_con_y.set_direction(1)  # หมุนขึ้น
+            print("up")
+        else:
+            self.motor_con_y.set_direction(0)  # หมุนลง
+            print("down")
+
+        speed = max(200, min(abs(speed_adjustment), 900))  # จำกัดช่วงความเร็ว
+        speed = round(speed, 4)
+        # print(f'speed: {speed} speed_adjustment: {speed_adjustment}')
+        self.motor_con_y.set_speed(speed)
+
+        if speed > 20:
+            self.motor_con_y.start_motor()
+        else:
+            self.motor_con_y.stop_motor()
+    # setup page ========================================================================================================
+    def start_up_programe(self):
+        self.main_frame.setup_programe_ui()
+    # setup page ========================================================================================================
+    # show page ========================================================================================================
     def show_setting(self):
         self.main_frame.show_setting_page()
         self.main_frame.show()  
-
     def show_test(self):
         self.main_frame.show_test_page()
         self.main_frame.show()
-
     def show_calibate(self):
         self.main_frame.show_calibate_page()
         self.main_frame.show()
-
     def Show_main(self):
         self.main_frame.show_home_page()
         self.main_frame.show()
-    # show page
-
-    def start_program(self):
-        self.main_frame.test_weight_x_lineEdit.setEnabled(False)
-        self.main_frame.test_weight_y_lineEdit.setEnabled(False)
-        self.main_frame.r_weight_x_lineEdit.setEnabled(False)
-        self.main_frame.r_weight_y_lineEdit.setEnabled(False)
-        self.main_frame.dis_port_pushButton.setEnabled(False)
-        self.main_frame.st_save_pushButton.setEnabled(False)
-        self.main_frame.test_k_set_pushButton.setEnabled(False)
-        self.main_frame.dis_port_pushButton.setStyleSheet(u"background:gray")
-        self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:gray")
-        self.disable_ui_parameter()
-
-    def clear_loadcell_data(self):
-        self.main_frame.test_weight_x_lineEdit.clear()
-        self.main_frame.test_weight_y_lineEdit.clear()
-        self.main_frame.r_weight_x_lineEdit.clear()
-        self.main_frame.r_weight_y_lineEdit.clear()
-
-    def clear_displace_data(self):
-        self.main_frame.test_dis_x_lineEdit.clear()
-        self.main_frame.test_dis_y_lineEdit.clear()
-
-
-    # set parameter to ui frame
-    def config_button_pressed(self):
-        self.show_massege_box_info("CONFIG","You want to change the parameter ??")
-        self.enable_ui_parameter()
-
-
-    def save_button_pressed(self):
-        read_pwmx = self.main_frame.st_pwm_x_lineEdit.text()
-        read_pwmy = self.main_frame.st_pwm_y_lineEdit.text()
-        read_limit_wx = self.main_frame.st_limit_weight_x_lineEdit.text()
-        read_limit_wy = self.main_frame.st_limit_weight_y_lineEdit.text()
-        read_limit_dx = self.main_frame.st_limit_distance_x_lineEdit.text()
-        read_limit_dy = self.main_frame.st_limit_distance_y_lineEdit.text()
-        read_area = self.main_frame.st_Area_lineEdit.text() 
-        self.databass_controller.set_parameter_to_setting(read_pwmx,read_pwmy,read_limit_wx,read_limit_wy,read_limit_dx,read_limit_dy,read_area)
-        
-        self.show_massege_box_info("SAVE","save parameter success")
-        self.disable_ui_parameter()
-        self.CT_motor_X.get_setting_speed(read_pwmy)
-        self.delay(1)
-        self.CT_motor_Y.get_setting_speed(read_pwmx)
-
+    # show page ========================================================================================================
+    # show message box  ========================================================================================
+    def show_massege_box_question(self,title,text):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    def show_massege_box_info(self,title,text):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        msg_box.exec()
+    def show_massege_box_error(self,title,text):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        msg_box.exec()
+    def show_massege_box_warning(self,title,text):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        msg_box.exec()
+    # show message box  =============================================================================================
+    # show parameter to ui ==========================================================================================
     def show_parameter(self):
         self.data_st = str(self.databass_controller.read_parameter_to_setting()).strip("[]").strip("()").split(",")
         self.ID_P = str(self.data_st[0])
@@ -436,7 +458,26 @@ class MainController(QObject):
         self.limit_dy = str(self.data_st[6])
         self.area_test = str(self.data_st[7])
         self.set_parameter_to_ui(self.p_pwmx,self.p_pwmy,self.limit_wx,self.limit_wy,self.limit_dx,self.limit_dy,self.area_test)
-
+        self.offset_data = str(self.databass_controller.read_offset_to_ui()).strip("[]").strip("()").split(",")
+        
+        self.offset_dis_x = float(self.offset_data[1])
+        self.offset_dx = round(self.offset_dis_x, 4)
+        # print(self.offset_dx)
+        self.offset_dis_x = str(self.offset_dis_x)
+        
+        self.offset_dis_y = float(self.offset_data[2])
+        self.offset_dy = round(self.offset_dis_y, 4)
+        # print(self.offset_dy)
+        self.offset_dis_y = str(self.offset_dis_y)
+        
+        self.set_parameter_offset_to_ui(self.offset_dis_x,self.offset_dis_y)
+        
+    def set_parameter_offset_to_ui(self,off_dis_x,off_dis_y):
+        self.main_frame.dis_set_offset_x_lineEdit.setText(off_dis_x)
+        self.main_frame.dis_set_offset_y_lineEdit.setText(off_dis_y)
+        self.main_frame.dis_set_offset_x_lineEdit.setEnabled(False)
+        self.main_frame.dis_set_offset_y_lineEdit.setEnabled(False)
+        
     def set_parameter_to_ui(self,ppx,ppy,lwx,lwy,ldx,ldy,area):
         self.main_frame.st_pwm_x_lineEdit.setText(ppx)
         self.main_frame.st_pwm_y_lineEdit.setText(ppy)
@@ -452,318 +493,41 @@ class MainController(QObject):
         self.main_frame.st_limit_distance_x_lineEdit.setEnabled(False)
         self.main_frame.st_limit_distance_y_lineEdit.setEnabled(False)
         self.main_frame.st_Area_lineEdit.setEnabled(False)
+    # set parameter to ui ==========================================================================================
+    # set parameter to ui frame ==========================================================================================
+    def config_button_pressed(self):
+        self.show_message_info.emit("CONFIG","You want to change the parameter ??")
+        self.main_frame.config_parameter()
 
-    def enable_ui_parameter(self):
-        self.main_frame.st_config_pushButton.setEnabled(False)
-        self.main_frame.st_save_pushButton.setEnabled(True)
-        self.main_frame.st_pwm_x_lineEdit.setEnabled(True)
-        self.main_frame.st_pwm_y_lineEdit.setEnabled(True)
-        self.main_frame.st_limit_weight_x_lineEdit.setEnabled(True)
-        self.main_frame.st_limit_weight_y_lineEdit.setEnabled(True)
-        self.main_frame.st_limit_distance_x_lineEdit.setEnabled(True)
-        self.main_frame.st_limit_distance_y_lineEdit.setEnabled(True)
-        self.main_frame.st_Area_lineEdit.setEnabled(True)
-        self.main_frame.st_config_pushButton.setStyleSheet(u"background:gray")
-        self.main_frame.st_save_pushButton.setStyleSheet(u"background:rgb(170, 255, 0)")
-        self.main_frame.st_pwm_x_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_pwm_y_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_limit_weight_x_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_limit_weight_y_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_limit_distance_x_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_limit_distance_y_lineEdit.setStyleSheet(u"background:white")
-        self.main_frame.st_Area_lineEdit.setStyleSheet(u"background:white")
-
-    def disable_ui_parameter(self):
-        self.main_frame.st_config_pushButton.setEnabled(True)
-        self.main_frame.st_save_pushButton.setEnabled(False)
-        self.main_frame.st_pwm_x_lineEdit.setEnabled(False)
-        self.main_frame.st_pwm_y_lineEdit.setEnabled(False)
-        self.main_frame.st_limit_weight_x_lineEdit.setEnabled(False)
-        self.main_frame.st_limit_weight_y_lineEdit.setEnabled(False)
-        self.main_frame.st_limit_distance_x_lineEdit.setEnabled(False)
-        self.main_frame.st_limit_distance_y_lineEdit.setEnabled(False)
-        self.main_frame.st_Area_lineEdit.setEnabled(False)
-        self.main_frame.st_config_pushButton.setStyleSheet(u"background:rgb(115, 174, 253)")
-        self.main_frame.st_save_pushButton.setStyleSheet(u"background:gray")
-        self.main_frame.st_pwm_x_lineEdit.setStyleSheet(u"background:gray")
-        self.main_frame.st_pwm_y_lineEdit.setStyleSheet(u"background:gray")
-        self.main_frame.st_limit_weight_x_lineEdit.setStyleSheet(u"background:gray")
-        self.main_frame.st_limit_weight_y_lineEdit.setStyleSheet(u"background:gray")
-        self.main_frame.st_limit_distance_x_lineEdit.setStyleSheet(u"background:gray")
-        self.main_frame.st_limit_distance_y_lineEdit.setStyleSheet(u"background:gray")
-        self.main_frame.st_Area_lineEdit.setStyleSheet(u"background:gray")
-
-    def enable_m_controll(self):
-        self.main_frame.m_up_pushButton.setEnabled(True)
-        self.main_frame.m_down_pushButton.setEnabled(True)
-        self.main_frame.m_in_pushButton.setEnabled(True)
-        self.main_frame.m_out_pushButton.setEnabled(True)
-        self.main_frame.m_stop_all_pushButton.setEnabled(True)
-        self.main_frame.test_start_pushButton.setEnabled(True)
-        self.main_frame.test_stop_pushButton.setEnabled(True)
-        self.main_frame.test_clear_pushButton.setEnabled(True)
-        self.main_frame.test_save_pushButton.setEnabled(True)
-        self.main_frame.m_up_pushButton.setStyleSheet(u"background:rgb(85, 255, 0)")
-        self.main_frame.m_down_pushButton.setStyleSheet(u"background:rgb(85, 255, 0)")
-        self.main_frame.m_in_pushButton.setStyleSheet(u"background:rgb(85, 170, 255)")
-        self.main_frame.m_out_pushButton.setStyleSheet(u"background:rgb(85, 170, 255)")
-        self.main_frame.m_stop_all_pushButton.setStyleSheet(u"background:rgb(255, 145, 137)")
-        self.main_frame.test_start_pushButton.setStyleSheet(u"background:rgb(155, 221, 163)")
-        self.main_frame.test_stop_pushButton.setStyleSheet(u"background:rgb(255, 61, 2)")
-        self.main_frame.test_clear_pushButton.setStyleSheet(u"background:rgb(0, 170, 255)")
-        self.main_frame.test_save_pushButton.setStyleSheet(u"background:rgb(170, 255, 255)")
-
-    def show_massege_box_question(self,title,text):
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Question)
-        msg_box.setWindowTitle(title)
-        msg_box.setText(text)
-        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-
-    def show_massege_box_info(self,title,text):
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Information)
-        msg_box.setWindowTitle(title)
-        msg_box.setText(text)
-        msg_box.exec()
-
-    def show_massege_box_error(self,title,text):
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setWindowTitle(title)
-        msg_box.setText(text)
-        msg_box.exec()
-
-    def show_massege_box_warning(self,title,text):
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Warning)
-        msg_box.setWindowTitle(title)
-        msg_box.setText(text)
-        msg_box.exec()
-
-    # ========= START BUTTON =========
-    def start_button_pressed(self):
-        try:
-            if self.monotonic_test:
-                self.start_monotonic_test()
-                
-            elif self.cyclic_test:
-                pass
-            
-        except Exception as e:
-            self.show_massege_box_error("ERROR",f"Not Selected Test Type")
-
-    def stop_button_pressed(self):
-        try:
-            if self.monotonic_test:
-                self.stop_monotonic_test()
-            elif self.cyclic_test:
-                pass
-        except Exception as e:
-            self.show_massege_box_error("ERROR",f"Not Selected Test Type")
-
-
-    # ============== test monotonic ====================
-    
-    def run_monotonic_test(self):
-    
-        while self.mono_test:
-            self.sigma_y = self.loadcell_Y
-            if self.monotonic_state == 0:
-                pass
-            
-            elif self.monotonic_state == 1:
-                self.start_monotonic_calculate_k = True
-                self.lock_export_data_y = False
-                self.export_y_load_data = Thread(target=self.export_data_in_load_y_before_test)
-                self.export_y_load_data.start()
-                self.recommend_wy = float(self.main_frame.st_weight_y_lineEdit.text())
-                self.CT_motor_Y.down_motors_y()
-                self.delay(1)
-                self.monotonic_state = 2
-                
-            elif self.monotonic_state == 2:
-                if self.loadcell_Y >= self.recommend_wy +- 3:
-                    self.CT_motor_Y.stop_motors_y()
-                    self.monotonic_state = 3
-            
-            elif self.monotonic_state == 3:
-                data_lines = self.main_frame.test_output_textEdit.toPlainText().split('\n')
-                sigma_y_values = []
-                for line in data_lines:
-                    if line.strip():
-                        values = line.split(',')
-                        if len(values) > 7:
-                            try:
-                                sigma_y_values.append(float(values[7].strip()))
-                            except ValueError:
-                                pass
-                if sigma_y_values:
-                    self.sigma_y_in_text_edite = max(sigma_y_values)
-                else:
-                    self.sigma_y_in_text_edite = 0.0
-                    
-                if self.sigma_y_in_text_edite >= self.recommend_wy +- 2: 
-                    self.main_frame.test_k_set_pushButton.setEnabled(True)
-                    self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:rgb(206, 223, 255)")               
-                    self.lock_export_data_y = True
-                    self.export_y_load_data.join()
-                    self.show_message_info.emit("MONOTONIC","Plese insert K Parameter")
-                    self.monotonic_state = 4
-                
-            elif self.monotonic_state == 4:
-                if self.set_k_param_success == True:
-                    self.main_frame.test_k_set_pushButton.setEnabled(False)
-                    self.main_frame.test_k_set_pushButton.setStyleSheet(u"background:gray")
-                    self.calculate_k_every_time.emit()
-                    self.delay(1)
-                    self.show_test()
-                    self.main_frame.test_output_textEdit.append(f"Start Monotonic Test K = {self.monotonic_k_param}")
-                    self.CT_motor_X.in_motors_x()
-                    self.delay(1)
-                    print("5")
-                    self.monotonic_state = 5
-                    
-            elif self.monotonic_state == 5:
-                self.calculate_k_every_time.emit()
-                if self.sigma_y < self.new_sigma_y_sum - 0.05:
-                    self.CT_motor_Y.down_motors_y()
-                elif self.sigma_y > self.new_sigma_y_sum + 0.05:
-                    self.CT_motor_Y.up_motors_y()
-                else:
-                    self.CT_motor_Y.stop_motors_y()
-                self.delay(0.5)
-                self.monotonic_state = 6
-
-            elif self.monotonic_state == 6:
-                # self.calculate_k_every_time.emit()
-                self.monotonic_state = 5
-                self.delay(3)
-                if self.round_data_monotonic % 10 == 0:
-                    self.export_data_in_load_y_before_test()
-            # elif self.monotonic_state == 5:
-            #     self.calculate_k_every_time.emit()
-            #     if self.sigma_y < self.new_sigma_y_sum - 0.5:
-            #         self.CT_motor_Y.down_motors_y()
-            #     elif self.sigma_y > self.new_sigma_y_sum + 0.5:
-            #         self.CT_motor_Y.up_motors_y()
-            #     else:
-            #         self.CT_motor_Y.stop_motors_y()
-            #     self.delay(0.5)
-            
-            # elif self.monotonic_state == 5:
-            #     self.calculate_k_every_time.emit()
-            #     print(self.new_sigma_y_sum)
-            #     print("6")
-            #     self.monotonic_state = 6
-            
-            # elif self.monotonic_state == 6:
-            #     if self.sigma_y >= self.new_sigma_y_sum +- 0.5:
-            #         self.monotonic_state = 777   
-                    
-            #     elif self.sigma_y <= self.new_sigma_y_sum +- 0.5:
-            #         self.monotonic_state = 888
-                    
-            #     elif self.sigma_y == self.new_sigma_y_sum +- 0.5:
-            #         self.CT_motor_Y.stop_motors_y()
-            #         self.monotonic_state = 5
-            
-            
-            # elif self.monotonic_state == 777:
-            #     # self.CT_motor_Y.up_motors_y()
-            #     self.CT_motor_Y.down_motors_y() 
-            #     self.monotonic_state = 999
-                
-            # elif self.monotonic_state == 888:
-            #     # self.CT_motor_Y.down_motors_y()
-            #     self.CT_motor_Y.up_motors_y()
-            #     self.monotonic_state = 999
-                
-            # elif self.monotonic_state == 999:
-            #     if math.isclose(self.sigma_y, self.new_sigma_y_sum, rel_tol=0.05):
-            #         self.CT_motor_Y.stop_motors_y()
-            #         self.monotonic_state = 5
-            #     # if self.sigma_y >= self.new_sigma_y_sum - 0.5 and self.sigma_y <= self.new_sigma_y_sum + 0.5:
-            #     #     self.CT_motor_Y.stop_motors_y()
-            #     #     self.monotonic_state = 5
-            #     self.delay(0.5)
-            # print(self.monotonic_state)
-
-
-    def export_data_in_load_y_before_test(self):
-        while self.lock_export_data_y == False:
-            self.old_dis_y = getattr(self, 'old_dis_y', 0.0)
-            self.diff_dis_y = round(float(self.dis_y) - (self.old_dis_y),3)
-            self.new_sigma_y_sum = 0.0
-            self.round_data_monotonic += 1
-            self.sigma_y = self.loadcell_Y
-            self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            self.main_frame.test_output_textEdit.append(f"{self.timestamp} , {self.dis_y} , {self.old_dis_y} , {self.diff_dis_y} , {self.dis_x}  , {self.loadcell_Y} , {self.loadcell_X} , {self.sigma_y} , {self.new_sigma_y_sum} ,{self.round_data_monotonic}")
-            self.old_dis_y = float(self.dis_y)
-            self.delay(5)
-            
-
-    def calculate_k_parameter(self):
-        if self.lock_export_data == False:
-            self.sigma_y = self.loadcell_Y
-            self.monotonic_k_param = float(self.main_frame.st_K_lineEdit.text())
-            if self.start_monotonic_calculate_k == True:
-                self.old_dis_y = getattr(self, 'old_dis_y', 0.0)
-                self.diff_dis_y = round(float(self.dis_y) - (self.old_dis_y),3)
-
-                self.new_sigma_y = round( (self.diff_dis_y) * ( self.monotonic_k_param + self.sigma_y ) ,3)
-                self.new_sigma_y_sum = round((self.sigma_y)+(self.new_sigma_y),3) 
-                self.main_frame.test_new_sigma_y_lineEdit.setText(str(self.new_sigma_y_sum))
-                self.round_data_monotonic += 1
-                self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                self.main_frame.test_output_textEdit.append(f"{self.timestamp} , {self.dis_y} , {self.old_dis_y} , {self.diff_dis_y} , {self.dis_x}  , {self.loadcell_Y} , {self.loadcell_X} , {self.sigma_y} , {self.new_sigma_y_sum} ,{self.round_data_monotonic}")
-                self.old_dis_y = float(self.dis_y)
-
-    def start_monotonic_test(self):
-        self.mono_test = True
-        self.lock_export_data = False
-        self.monotonic_state = 1 
-        self.round_data_monotonic = 0
-        self.CT_motor_X.get_setting_speed(self.speed_MY)
-        self.delay(1)
-        self.CT_motor_Y.get_setting_speed(self.speed_MX)
-        self.monotonic_thread = Thread(target=self.run_monotonic_test)
-        self.monotonic_thread.start()
-
-    def stop_monotonic_test(self):
-        self.mono_test = False
-        self.start_monotonic_calculate_k = False
-        self.start_monotonic_k_control = False
-        self.monotonic_state = 0
-        self.stop_all_motors()
-        self.monotonic_thread.join()
-        
-# ============== SAVE CLEAR ====================
-    def test_save_button_pressed(self):
-        data = self.main_frame.test_output_textEdit.toPlainText()
-        file_name, _ = QFileDialog.getSaveFileName(self.main_frame, "Save File", "", "CSV Files (*.csv);;Text Files (*.txt)")
-        if file_name.endswith('.csv'):
-            with open(file_name, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(["time", "Dis Y(Dv)","Dis Y Old(Dv)" , "difference Dis Y" ,"Dis X(Dh)", "loadcell Y (KN)", "loadcell X (KN)", "sigma Y (KN/M^2)", "newsigma Y (KN/M^2)","round data"])
-                for line in data.split('\n'):
-                    writer.writerow(line.split(','))
-        elif file_name.endswith('.txt'):
-            with open(file_name, 'w', encoding='utf-8') as txtfile:
-                txtfile.write(data)
-            self.show_message_info.emit("SAVE", f"Data saved to {file_name}")
-        else:
-            self.show_message_info.emit("SAVE", "Save operation cancelled")
-        
-    def test_clear_button_pressed(self):
-        self.clear_data_frame()
-
-# ============== test monotonic ====================
+    def save_button_pressed(self):
+        read_pwmx = self.main_frame.st_pwm_x_lineEdit.text()
+        read_pwmy = self.main_frame.st_pwm_y_lineEdit.text()
+        read_limit_wx = self.main_frame.st_limit_weight_x_lineEdit.text()
+        read_limit_wy = self.main_frame.st_limit_weight_y_lineEdit.text()
+        read_limit_dx = self.main_frame.st_limit_distance_x_lineEdit.text()
+        read_limit_dy = self.main_frame.st_limit_distance_y_lineEdit.text()
+        read_area = self.main_frame.st_Area_lineEdit.text() 
+        self.databass_controller.set_parameter_to_setting(read_pwmx,read_pwmy,read_limit_wx,read_limit_wy,read_limit_dx,read_limit_dy,read_area)
+        self.show_message_info.emit("SAVE","save parameter success")
+        self.main_frame.save_parameter()
+    # set parameter to ui frame ==========================================================================================
+    # insert data to UI ==========================================================================================
+    def inseart_data_to_ui(self,dx,dy,fx,fy):
+        self.main_frame.test_weight_y_lineEdit.setText(str(fy))
+        self.main_frame.r_weight_y_lineEdit.setText(str(fy))
+        self.main_frame.test_weight_x_lineEdit.setText(str(fx))
+        self.main_frame.r_weight_x_lineEdit.setText(str(fx))
+        self.main_frame.test_dis_y_lineEdit.setText(str(dy))
+        self.main_frame.test_dis_x_lineEdit.setText(str(dx))
     def delay(self,seconds):
         start_time = time.perf_counter()
         while time.perf_counter() - start_time < seconds:
             pass  # ทำงานอื่นต่อไปได้
-
-    def clear_data_frame(self):
-        self.main_frame.test_output_textEdit.clear()
-        self.main_frame.test_new_sigma_y_lineEdit.clear()
+    def __del__(self):
+        self.loadcell_con_Y.disconnect()
+        self.loadcell_con_X.disconnect()
+        self.lvdt_con.disconnect()
+        self.motor_con_x.disconnect()
+        self.motor_con_y.disconnect()
+        if self.sensorThread.is_alive():
+            self.sensorThread.join()
