@@ -9,10 +9,12 @@
 
 bool isRunning = false;
 bool BtIsRunning = false;
+bool MNIsRunning = false;
 
 bool direction = true;
 unsigned long lastPulseTime = 0;
 unsigned long pulseInterval = 5000; // Default to lowest speed
+unsigned long pulseManualInterval = 100; // Default to speed manual control
 bool stepState = false;
 String serialBuffer = "";
 
@@ -23,9 +25,6 @@ void controlMotor(bool state, bool dir);
 
 char button_up_state = 0xFF;
 char button_down_state = 0xFF;
-
-unsigned long pulseManualInterval = 1000;
-unsigned long lastPulseManualTime = 0;
 
 int debug_mode = 0;
 
@@ -75,6 +74,12 @@ void loop()
         digitalWrite(STEP_PIN, stepState);
     }
     if (BtIsRunning && (micros() - lastPulseTime >= pulseInterval))
+    {
+        lastPulseTime = micros();
+        stepState = !stepState;
+        digitalWrite(STEP_PIN, stepState);
+    }
+    if (MNIsRunning && (micros() - lastPulseTime >= pulseManualInterval))
     {
         lastPulseTime = micros();
         stepState = !stepState;
@@ -174,6 +179,28 @@ void handleSerialCommand()
             {
                 debug_mode = 0;
             }
+            // ========================== manual control ==========================
+            else if (serialBuffer == "Mu,1")
+            {
+                if (direction != true)
+                {
+                    stopMotorBeforeDirectionChange();
+                }
+                MNIsRunning = true;
+                direction = true;
+                digitalWrite(DIR_PIN, HIGH);
+            }
+            else if (serialBuffer == "Md,0")
+            {
+                if (direction != false)
+                {
+                    stopMotorBeforeDirectionChange();
+                }
+                MNIsRunning = true;
+                direction = false;
+                digitalWrite(DIR_PIN, LOW);
+            }
+            // ========================== manual control ==========================
             else
             {
                 if (debug_mode)
