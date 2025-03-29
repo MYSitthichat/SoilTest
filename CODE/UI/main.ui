@@ -1040,7 +1040,144 @@ background:rgb(255, 255, 255)
        <string>set offset</string>
       </property>
      </widget>
+     <widget class="Line" name="cl_line_13">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>280</y>
+        <width>370</width>
+        <height>2</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(0, 0, 0)</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="Line" name="cl_line_14">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>325</y>
+        <width>370</width>
+        <height>2</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(0, 0, 0)</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="Line" name="cl_line_15">
+      <property name="geometry">
+       <rect>
+        <x>740</x>
+        <y>280</y>
+        <width>2</width>
+        <height>140</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(0, 0, 0)</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+     </widget>
+     <widget class="Line" name="cl_line_16">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>418</y>
+        <width>370</width>
+        <height>2</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(0, 0, 0)</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="set_zero_dx_pushButton">
+      <property name="geometry">
+       <rect>
+        <x>570</x>
+        <y>340</y>
+        <width>161</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(0, 255, 255)</string>
+      </property>
+      <property name="text">
+       <string>set zero DX</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="set_zero_dy_pushButton">
+      <property name="geometry">
+       <rect>
+        <x>380</x>
+        <y>340</y>
+        <width>161</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>24</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(85, 170, 127)</string>
+      </property>
+      <property name="text">
+       <string>set zero DY</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="r_weight_label_3">
+      <property name="geometry">
+       <rect>
+        <x>460</x>
+        <y>285</y>
+        <width>201</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>TH Niramit AS</family>
+        <pointsize>22</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:rgb(255, 255, 222)</string>
+      </property>
+      <property name="text">
+       <string>SET ZERO DY,DX</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
      <zorder>cl_background_labe</zorder>
+     <zorder>r_weight_label_3</zorder>
      <zorder>r_weight_label_2</zorder>
      <zorder>r_weight_y_label</zorder>
      <zorder>r_weight_x_label</zorder>
@@ -1078,6 +1215,12 @@ background:rgb(255, 255, 255)
      <zorder>cl_line_12</zorder>
      <zorder>dis_set_offset_x_lineEdit</zorder>
      <zorder>set_offset_pushButton</zorder>
+     <zorder>cl_line_13</zorder>
+     <zorder>cl_line_14</zorder>
+     <zorder>cl_line_15</zorder>
+     <zorder>cl_line_16</zorder>
+     <zorder>set_zero_dx_pushButton</zorder>
+     <zorder>set_zero_dy_pushButton</zorder>
     </widget>
     <widget class="QWidget" name="test_page">
      <property name="styleSheet">

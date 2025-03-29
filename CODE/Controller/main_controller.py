@@ -40,6 +40,8 @@ class MainController(QObject):
         self.main_frame.test_manual_control_checkBox.stateChanged.connect(self.check_manual_control)
         self.main_frame.set_offset_pushButton.clicked.connect(self.set_offset_pressed)
         self.main_frame.save_offset_pushButton.clicked.connect(self.save_offset_pressed)
+        self.main_frame.set_zero_dx_pushButton.clicked.connect(self.set_zero_Dx_pressed)
+        self.main_frame.set_zero_dy_pushButton.clicked.connect(self.set_zero_Dy_pressed)
         self.check_port_controller.ports_updated.connect(self.port_updated)
         self.main_frame.con_port_pushButton.clicked.connect(self.con_port_pressed)
         self.main_frame.test_pushButton.clicked.connect(self.show_test)
@@ -66,8 +68,10 @@ class MainController(QObject):
         self.start_collect_data = False
         self.Dx = 0
         self.offset_dx = 0.0
+        self.set_zero_dx_get_data = 0.0
         self.Dy = 0
         self.offset_dy = 0.0
+        self.set_zero_dy_get_data = 0.0
         self.previous_Dy = 0
         self.Fx = 0
         self.Fy = 0
@@ -97,6 +101,16 @@ class MainController(QObject):
 
     @Slot()
     @Slot(str)
+    
+    def set_zero_Dy_pressed(self):
+        self.set_zero_dx_get_data = float(self.main_frame.test_dis_x_lineEdit.text())
+        # self.set_zero_dy_get_data = float(self.Dy)
+        # print(self.set_zero_dy_get_data)
+    
+    def set_zero_Dx_pressed(self):
+        self.set_zero_dy_get_data = float(self.main_frame.test_dis_y_lineEdit.text())
+        # self.set_zero_dx_get_data = float(self.Dx)
+        # print(self.set_zero_dx_get_data)
     
     def set_offset_pressed(self):
         self.main_frame.dis_set_offset_x_lineEdit.setEnabled(True)
@@ -344,14 +358,19 @@ class MainController(QObject):
     def collect_data(self):
         while self.start_collect_data == True:
             try:
+                self.offset_dx_test = float(self.main_frame.dis_set_offset_x_lineEdit.text())
+                self.offset_dy_test = float(self.main_frame.dis_set_offset_y_lineEdit.text())
                 area = float(self.main_frame.st_Area_lineEdit.text())
                 self.Dy, self.Dx = self.lvdt_con.get_data()
                 self.Fx = self.loadcell_con_X.get_data()
                 self.Fy = self.loadcell_con_Y.get_data()
-                self.Dy = float(self.Dy-self.offset_dy)
+                self.Dy = float((self.Dy-self.offset_dy_test))
+                self.Dy = float(self.Dy-self.set_zero_dy_get_data)
                 self.Dy = round(self.Dy, 4)
-                self.Dx = float(self.Dx-self.offset_dx)
+                self.Dx = float((self.Dx-self.offset_dx_test))
+                self.Dx = float(self.Dx-self.set_zero_dx_get_data)
                 self.Dx = round(self.Dx, 4)
+
                 if not self.lock_data_referanec and self.Dx != 0 and self.Dy != 0:
                     self.referance_Dy = self.Dy
                     self.referance_Dx = self.Dx
